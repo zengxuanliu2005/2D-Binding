@@ -1,78 +1,96 @@
-"""Per-protein feature vectors for the MI chain-rule decomposition.
+"""Per-protein feature blocks for the MI chain-rule decomposition.
 
-For each protein in each frame we compute three independent feature blocks:
+Five chain-rule blocks per protein, conditioned in the order listed below.
+The Numata chain rule
 
-  * `axis(3)`  — unit vector along the chain axis (R: chain[12] − chain[0],
-    flipped to point "up" for both R and L so that bound states cluster
-    at the same hemisphere).
-  * `bat_inner(30)` — the 30 BAT internal coordinates that describe the
-    chain shape EXCLUDING the binding end: 11 bond lengths (RT/LT chain
-    only, indices 0..10), 10 bond angles (interior, indices 0..9), and
-    9 torsions (chain_idx 0..9). The full BAT has 33 DOF; we hold back
-    3 to capture the binding-bead "end" separately.
-  * `bat_end(3)`  — the 3 BAT entries that touch the binding bead:
-    (last bond length, last bond angle, last torsion). These form the
-    "end-volume" degrees of freedom whose distribution captures the
-    binding-bead's local wiggle room.
+    H(axis_ecto, ext_z, bonds, angles, torsions)
+        = H(axis_ecto)
+        + H(ext_z | axis_ecto)
+        + H(bonds | axis_ecto, ext_z)
+        + H(angles | axis_ecto, ext_z, bonds)
+        + H(torsions | axis_ecto, ext_z, bonds, angles)
 
-The trans/rot/conf/bond decomposition is then obtained by computing the
-Kozachenko-Leonenko entropy on growing nested feature sets and taking
-chain-rule differences:
+makes the per-block ΔS contributions sum to ΔS_total by construction.
 
-    H(axis, bat_inner, bat_end) = H(axis) + H(bat_inner | axis)
-                                          + H(bat_end | axis, bat_inner)
+| block      | dim | content                                                           |
+|------------|-----|-------------------------------------------------------------------|
+| axis_ecto  | 2   | in-plane (x, y) of the unit vector chain[12] − chain[3] (RH→RB)   |
+| ext_z      | 1   | vertical ecto extension |chain[12].z − chain[3].z|                |
+| bonds      | 12  | all 12 bond lengths along the chain                               |
+| angles     | 11  | all 11 interior bond angles                                       |
+| torsions   | 10  | all 10 dihedral torsions in (−π, π]                               |
+
+This is the same total dimensionality (36) as the previous (axis(3) +
+bat_inner(30) + bat_end(3)) split, but the changes matter:
+
+  * The rotational feature is now the **ecto-domain orientation**
+    (chain[12] − chain[3]) instead of the whole chain (chain[12] −
+    chain[0]). The anchor (chain[0..3]) is rigid in all three K
+    settings, so the previous axis was system-invariant; the ecto
+    axis varies with the K01/K10/K100 stiffness and gives a real
+    ΔΔS_rot.
+  * Torsions live in their own block, so the cyclic estimator from
+    `entropy_cyclic.py` can be applied to them without affecting the
+    Gaussian-valid (bonds, angles, axis_ecto, ext_z) sub-blocks where
+    Schlitter is exact.
+
+Ligand z is flipped before computing ecto features so both R and L axes
+share the same +z hemisphere (matches the convention from session 3 for
+binding-vector vectors).
 """
 from __future__ import annotations
 import sys
 from pathlib import Path
-
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).parent))
 from bat import bond_lengths, bond_angles, dihedral_angles  # noqa: E402
 
 
-def chain_axis(chain: np.ndarray, kind: str) -> np.ndarray:
-    """In-plane (x, y) components of the chain axis unit vector.
+def _flip_ligand_z(chain: np.ndarray, kind: str) -> np.ndarray:
+    """Flip z of every bead for a ligand chain so axes share +z hemisphere."""
+    if kind == "R":
+        return chain
+    out = chain.copy()
+    out[..., 2] = -out[..., 2]
+    return out
 
-    The axis unit vector v lives on the 2-sphere — using (vx, vy, vz)
-    yields a rank-deficient covariance. We use the 2 in-plane components
-    (vx, vy) which parameterise the 2-sphere bijectively in the hemisphere
-    around (0, 0, 1) (where bound chains live). z is implicitly √(1−x²−y²).
 
-    Ligand z is flipped so that both R and L axes share the same +z hemisphere
-    — this makes the joint (axis_R, axis_L) distribution clustered in the same
-    region when the pair is bound, instead of axis_R pointing up and axis_L
-    pointing down.
+def ecto_features(chain: np.ndarray, kind: str
+                  ) -> tuple[np.ndarray, np.ndarray]:
+    """Return (axis_ecto(2), ext_z(1)).
+
+    axis_ecto : (vx, vy) of the unit ecto vector  v = (chain[12] − chain[3]) / |.|
+    ext_z     : chain[12].z − chain[3].z (signed; both R and L have +z anchor side)
     """
-    v = chain[..., 12, :] - chain[..., 0, :]
-    v = v / np.linalg.norm(v, axis=-1, keepdims=True)
-    if kind == "L":
-        v = np.stack([v[..., 0], v[..., 1], -v[..., 2]], axis=-1)
-    return v[..., :2]   # (x, y) only — 2 DOF
+    ch = _flip_ligand_z(chain, kind)
+    v = ch[..., 12, :] - ch[..., 3, :]
+    nrm = np.linalg.norm(v, axis=-1, keepdims=True)
+    nrm = np.where(nrm < 1e-12, 1.0, nrm)
+    u = v / nrm
+    axis = u[..., :2]                                     # (..., 2)
+    extz = (ch[..., 12, 2] - ch[..., 3, 2])[..., None]    # (..., 1)
+    return axis, extz
 
 
-def bat_split(chain: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-    """Split BAT into (inner_30, end_3).
-
-    inner_30 = [b[0..10], a[0..9], t[0..8]]   — 11+10+9 = 30 DOF
-    end_3    = [b[11], a[10], t[9]]           — last bond, angle, torsion = 3 DOF
-
-    The last bond (b[11] = |chain[12] − chain[11]|) is the bond touching
-    the binding bead; the last angle (a[10]) and last torsion (t[9]) are
-    the angle and torsion at the binding-bead end.
-    """
+def bat_blocks(chain: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Return (bonds(12), angles(11), torsions(10)) BAT blocks."""
     b = bond_lengths(chain)
     a = bond_angles(chain)
     t = dihedral_angles(chain)
-    inner = np.concatenate([b[..., :-1], a[..., :-1], t[..., :-1]], axis=-1)
-    end = np.stack([b[..., -1], a[..., -1], t[..., -1]], axis=-1)
-    return inner, end
+    return b, a, t
 
 
-def per_protein_features(positions: np.ndarray, kind: str
-                         ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """positions: (..., 13, 3). Returns (axis(3), bat_inner(30), bat_end(3))."""
-    axis = chain_axis(positions, kind)
-    inner, end = bat_split(positions)
-    return axis, inner, end
+def per_protein_blocks(chain: np.ndarray, kind: str
+                        ) -> dict[str, np.ndarray]:
+    """Returns a dict with keys axis_ecto, ext_z, bonds, angles, torsions
+    each of shape (..., d_block). chain has shape (..., 13, 3)."""
+    axis_ecto, ext_z = ecto_features(chain, kind)
+    bonds, angles, torsions = bat_blocks(chain)
+    return {
+        "axis_ecto": axis_ecto,
+        "ext_z":     ext_z,
+        "bonds":     bonds,
+        "angles":    angles,
+        "torsions":  torsions,
+    }
