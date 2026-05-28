@@ -1,0 +1,10 @@
+# Analysis packages for the 2D-Binding entropy work.
+# Use the existing conda env `phys`:
+#     conda activate phys
+# If anything below is missing, install into phys (with phys active):
+#     pip install -r requirements.txt      # or: conda install <pkg>
+numpy
+scipy
+pandas
+matplotlib
+scikit-learn   # KDE-based entropy estimators

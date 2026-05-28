@@ -1,0 +1,23 @@
+# Large MD outputs — keep these out of git (treat as read-only input)
+*.xyz
+*.dcd
+*.cpt
+*.psf
+*.xml
+dump.tsv
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# Results scratch (commit only curated figures/tables)
+results/scratch/
+
+# OS
+.DS_Store
+
+# Large simulation outputs
+outputs/
