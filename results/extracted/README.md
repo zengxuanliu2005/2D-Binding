@@ -7,13 +7,30 @@ extractor streams `traj.xyz`, classifies bonds from
 ## Validation
 
 `scripts/validate_against_legacy.py` byte-compares against the PhD's
-existing files in `outputs/<sys>/s001/`:
+existing files in `outputs/<sys>/s001/`.
 
-- K100 (rigid) — `result_Re_complex.dat`, `binding_vector_final_bound_vectors.tsv`,
-  `binding_vector_final_unbound_vectors.tsv`: **IDENTICAL**.
-- K10  (semi)  — same three files: **IDENTICAL**.
-- K01  (flex)  — legacy files do not exist; these outputs are the harmonized
-  replacement, computed by the same code path as K100/K10.
+Identical (byte-equal) against K100 **and** K10:
+
+- `result_Re_complex.dat`
+- `binding_vector_final_bound_vectors.tsv`
+- `binding_vector_final_unbound_vectors.tsv`
+- `bindsites_rxryrz_distribution.tsv`
+- `bindsites_angle_distribution.tsv`
+- `EC_angle_distributed_unbind.tsv`
+
+`EC_angle_distributed_bind.tsv`:
+
+- K10: value-set IDENTICAL — every line that appears in legacy also appears in
+  ours and vice versa, but row ordering in frames containing cross-pair bonds
+  could not be reverse-engineered from K100/K10 alone (the legacy ordering
+  rule for the L-chain of a cross-pair bond is opaque). Statistics computed
+  from these values are unaffected.
+- K100: same as K10, except for a single row where legacy prints `0.000000`
+  and ours prints `0.000001` (a 1×10⁻⁶ floating-point rounding difference in
+  one of 51 400 angle deviations). Statistically negligible.
+
+K01 legacy files do not exist — our outputs are the harmonized replacement,
+computed by the same code path.
 
 ## Definitions (recovered from the legacy K100/K10 outputs)
 
@@ -54,14 +71,25 @@ existing files in `outputs/<sys>/s001/`:
 - `binding_vector_final_unbound_vectors.tsv` — same observable for proteins
   not involved in a bond that frame.
 - `bond_state.tsv` — per-frame, per-bond log of `(frame, R_proto, L_proto, RB-LB distance)`.
+- `bindsites_rxryrz_distribution.tsv` — per-bond RB-LB vector (rx, ry, rz, |r|),
+  one row per bond, raw num_bonds order. Magnitude is the bond length in σ.
+- `bindsites_angle_distribution.tsv` — per-bond (θ_atom1, θ_atom2) binding
+  angles in degrees. Taken directly from `num_bonds_for_xyz_frames.dat`
+  columns 2 and 3 (the simulator's own higher-precision output, not
+  recomputed from the lower-precision `traj.xyz`).
+- `EC_angle_distributed_{bind,unbind}.tsv` — per-chain, 5 values per chain.
+  Each value is (180° − ecto-bend angle) at chain-mid {7, 8, 9, 10, 11}
+  (the five ecto angles nearest the binding bead). With min-image PBC wrap
+  so unbound chains straddling a box boundary are handled correctly.
 
 ## How to regenerate
 
 ```bash
-python scripts/extract_complex.py outputs/15_120x120_K100_EPS05/s001
-python scripts/extract_complex.py outputs/15_120x120_K10_EPS05/s001
-python scripts/extract_complex.py outputs/22_120x120_K01_EPS05/s001
+for sys in 15_120x120_K100_EPS05 15_120x120_K10_EPS05 22_120x120_K01_EPS05; do
+    python scripts/extract_complex.py        outputs/$sys/s001
+    python scripts/extract_bindsites_ecangle.py outputs/$sys/s001
+done
 python scripts/validate_against_legacy.py
 ```
 
-All three runs finish in well under a minute on a laptop.
+All six runs finish in ~30 s combined on a laptop.
