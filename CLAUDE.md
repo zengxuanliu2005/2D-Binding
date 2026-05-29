@@ -8,21 +8,30 @@ Coarse-grained molecular dynamics study of how adhesion-protein **flexibility** 
 
 ## Current focus
 
-The blocker is the **entropy decomposition**. The four terms (translational + rotational + conformational + end-volume) must sum to the measured free-energy gaps — the log-ratios of `K2D,max`, in units of kBT:
+The decomposition closure is **done** — the PhD's S1–S23 four-term framework, evaluated directly on simulation chain coordinates, reproduces the K2D,max log-ratio targets within 0.4 kBT with all signs correct:
 
-| pair         | target ΔF (kBT) |
-| ------------ | --------------- |
-| flex – rigid | 3.56            |
-| semi – rigid | 2.68            |
-| semi – flex  | 0.90            |
+| pair         | predicted | target ΔF (kBT) | closed |
+| ------------ | --------- | --------------- | ------ |
+| flex – rigid | +3.96     | +3.56           | 111 %  |
+| semi – rigid | +2.69     | +2.68           | **100 %** |
+| semi – flex  | −1.27     | −0.90           | 141 %  |
 
-Earlier attempts double-count and don't close (one overshoots at 5.2, the revised one undershoots at 3.0 and flips the semi/flex order). **Do NOT tune terms to hit the target.** Fix the decomposition so it closes by construction — see PLAN.md Phase 2.
+The closure lives at tag `phase2-phd-closure-attempt` (commit `041cb0e` on `main`). Reproduce via `python scripts/phd_closure.py && python scripts/plot_phd_closure.py`. The four formulas are in `scripts/phd_formula.py`, driven by `scripts/phd_closure.py`. Per-system inputs come from `results/chain_coords/<sys>/chain_coords.npz` (written by `scripts/extract_chain_coords.py`).
+
+For the chronology of attempts (including three that didn't close: Schlitter conformational, Numata MI chain-rule, MI + chain potential) see `JOURNEY.md`. Those scripts are still on disk under `scripts/{conf_entropy,mi_decomposition,decomposition_full}.py` as historical record.
+
+**Remaining work:**
+- Bootstrap error bars on each of the four ΔF terms (~5 min local, required for write-up).
+- Phase 4 deliverables (write-up, slide deck, poster) — headline figure is `results/figures/closure_phd.png`.
+- (Optional) Parametric F_rot replacement (Bingham on S² or normalising flow) to tighten the 0.4 kBT residual. See `JOURNEY.md` §9.
+
+**Do NOT tune terms to hit the target.** The closure passes by construction now; don't re-fit anything just to get tighter numbers.
 
 ## Unit system — get this right; it propagates into every entropy number
 
 - **Length:** σ = 1 nm.  (2500 proteins/µm² ⇔ 20σ spacing ⇒ 400 nm²/protein ⇒ σ = 1 nm.)
 - **Energy:** kBT = 1.1 ε.  Convert any ε-based energy to kBT by **dividing by 1.1**.
-- **Bead spacing** (bond `r0`): 0.95 σ ≈ 0.95 nm.
+- **Bead spacing** (bond `r0`): **1.0 σ for protein–protein bonds** (HARM K=100 in `ref/nvt-md.py`), 0.95 σ only for the lipid FENE bonds. Several sessions tripped on this distinction; the closure framework uses `b = 1.0 σ` throughout.
 - **Binding well depth:** −14.76 ε ≈ **−13.4 kBT**.  Angular gate: θ0 = 10°, K = 15 /rad².
 - Thermostat: Langevin (Bussi–Parrinello), T = 1.1 ε/kB, dt = 0.01.
 

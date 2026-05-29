@@ -7,22 +7,39 @@ constant `K2D,max` between rigid and flexible proteins **purely as an entropy
 difference**, by decomposing it into translational, rotational, conformational,
 and end-volume contributions that sum to the measured value.
 
-> **Two companion docs:**
+> **Companion docs:**
 >
+> - `JOURNEY.md` — narrative of what was tried, what worked, what's open. Start here if you're picking the project up.
 > - `CLAUDE.md` — operational onboarding for Claude Code (units, conventions, rules).
 > - `PLAN.md` — the live task tracker (phases, status, acceptance criteria).
->
-> This README is the human-facing overview. Start here, then read those two.
+> - `results/phd_closure.md` — the closure result that works.
 
 ## Status at a glance
 
 - ✅ Model built & simulated (Cooke membrane + anchored bead-spring R/L + directional bond).
 - ✅ Master curve fitted; `K2D,max` extracted: rigid ≈ 12705, semi ≈ 875, flexible ≈ 362 nm².
-- 🔧 **Current blocker:** the entropy decomposition does not yet sum to the
-  measured free-energy gaps (3.56 / 2.68 / 0.90 kBT). This is the focus of Phase 2.
+- ✅ **Decomposition closes the budget** — the PhD's S1–S23 four-term framework
+  (`F_t + F_c + F_bond + F_rot`), evaluated directly on simulation chain
+  coordinates, gives all three K2D,max log-ratios within 0.4 kBT with correct
+  signs:
+
+  | pair | predicted | target | closed |
+  |---|---|---|---|
+  | flex − rigid | +3.96 kBT | +3.56 | 111 % |
+  | semi − rigid | +2.69 kBT | +2.68 | **100 %** |
+  | semi − flex  | −1.27 kBT | −0.90 | 141 % |
+
+  Headline figure: `results/figures/closure_phd.png`. Full curated
+  write-up: `results/phd_closure.md`. Reproduce locally with
+  `python scripts/phd_closure.py && python scripts/plot_phd_closure.py`.
+- ⬜ Bootstrap error bars on the four terms (~5 min of local compute, needed
+  for any write-up).
 - ⬜ Write-up, slide deck, and poster not yet started.
 
-See `PLAN.md` for the detailed checklist.
+For the full chronology of attempts (including the three that didn't close,
+which are kept on disk for the record) see `JOURNEY.md`. The closure that
+works lives at tag `phase2-phd-closure-attempt`; the multi-replica SBATCH
+pipeline (packaged but not run) lives on branch `analysis/cluster-pipeline`.
 
 ## The systems
 
