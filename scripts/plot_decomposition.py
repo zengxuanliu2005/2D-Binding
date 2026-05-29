@@ -21,7 +21,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 sys.path.insert(0, str(Path(__file__).parent))
-from features import per_protein_features  # noqa: E402
+from features import per_protein_blocks  # noqa: E402
 from mi_decomposition import decompose_one_system  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -37,7 +37,7 @@ def load_data(sys_name: str) -> dict:
 
 
 def axis_polar_deg(positions: np.ndarray, kind: str) -> np.ndarray:
-    a, _, _ = per_protein_features(positions, kind)
+    a = per_protein_blocks(positions, kind)["axis_ecto"]
     z = np.sqrt(np.clip(1 - (a ** 2).sum(axis=-1), 0, 1))
     return np.degrees(np.arccos(z))
 
@@ -201,7 +201,9 @@ def main():
     fig_axis_angles()
     fig_e2e_distributions()
     fig_binding_bead_z()
-    fig_closure_bars()
+    # closure_bars is superseded by closure_full.png (see plot_full_closure.py)
+    # which has the right per-term breakdown for the current decomposition.
+    # fig_closure_bars()
 
 
 if __name__ == "__main__":
