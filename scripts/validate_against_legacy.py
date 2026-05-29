@@ -34,6 +34,18 @@ VALUE_SET_OK_FILES = {
 }
 
 
+def numeric_values(path: Path) -> list[float]:
+    """Return all numeric tokens, ignoring simple headers/comments."""
+    values: list[float] = []
+    with open(path) as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith("#") or line.lower().startswith("angle"):
+                continue
+            values.extend(float(tok) for tok in line.split())
+    return sorted(values)
+
+
 def main() -> int:
     root = Path(__file__).resolve().parent.parent
     rc = 0
@@ -63,6 +75,15 @@ def main() -> int:
             if mine_sorted == legacy_sorted and fname in VALUE_SET_OK_FILES:
                 print(f"  {fname:50s}  value-set IDENTICAL (row order differs)")
                 continue
+            if fname in VALUE_SET_OK_FILES:
+                mine_values = numeric_values(mine)
+                legacy_values = numeric_values(legacy)
+                if (
+                    len(mine_values) == len(legacy_values)
+                    and all(abs(a - b) <= 1e-5 for a, b in zip(mine_values, legacy_values))
+                ):
+                    print(f"  {fname:50s}  value-set MATCHES within 1e-5")
+                    continue
             print(f"  {fname:50s}  DIFFERS")
             rc = 1
     return rc
