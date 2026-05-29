@@ -1,150 +1,189 @@
 # Running the closure pipeline on the cluster
 
-## TL;DR
+Hi Dr. H (cc Zengxuan) — this folder contains everything to run the
+S1–S23 four-term ΔF closure on **all replicas** of the three K-systems
+under your `2d_binding_MD/` tree on the cluster. The single-replica
+analysis already runs locally and reproduces all three K2D,max
+log-ratios within 1 kBT with correct signs (semi−rigid lands at
+exactly 100 %); doing this on the full multi-replica data will tighten
+F_rot (the rotational orientation entropy) which currently has bin-
+sensitivity on flex−rigid and semi−flex.
+
+## TL;DR — what to run
+
+You can copy this whole `cluster/` directory next to your existing
+analysis scripts (e.g. into `2d_binding_MD/analysis/`), or just submit
+the slurm files in-place after cloning the repo.
 
 ```bash
-# 1. on the cluster, after logging in and pulling this repo:
-cd ~/2D-Binding
-git switch analysis/cluster-pipeline       # or wherever this branch lands
-ls /mnt/nfs/ugstu/liuzx/15_120x120_K100_EPS05/   # confirm replica names
-# then edit cluster/extract.sbatch line 5 (#SBATCH --array=1-N) to match
+# 1. clone or sync this repo on the cluster, then:
+cd /path/where/you/put/the/repo/cluster
 
-# 2. submit the per-replica extractions (one job per replica, one replica
-#    does all 3 systems):
-sbatch cluster/extract.sbatch
+# 2. edit TWO things in extract_all.sh (top of file) if the defaults
+#    don't match your layout:
+#       TRAJ_ROOT   default /mnt/nfs/ugstu/liuzx/2d_binding_MD
+#       OUT_ROOT    default $PWD/chain_coords
+#    (you can also export them as env vars before sbatching)
 
-# 3. once the array job finishes, submit the closure step:
-sbatch cluster/closure.sbatch
+# 3. submit the per-replica extraction job
+sbatch extract.slurm
 
-# 4. the merged chain_coords npz files end up under
-#    results/chain_coords/<system>/chain_coords.npz   (one per system,
-#    a few MB each); send those three files back to me and I'll
-#    re-generate the closure markdown + figure on main.
+# 4. when extract finishes (check %J.log), submit the closure
+sbatch closure.slurm
+
+# 5. send the three merged npz files back to me; I'll update main
 ```
 
-That's it. Total compute is light: extract is ~30 s × n_replicas per
-system on 1 CPU; closure is sub-second.
+## SBATCH conventions
 
-## What these scripts actually do (and why each step exists)
+Both `.slurm` files follow the cluster's house style from your
+`analysis.slurm` template:
 
-### Background — what we're trying to measure
+```
+#SBATCH -J <job name>
+#SBATCH -o %J.log
+#SBATCH -e %J.err
+#SBATCH -p gpu
+#SBATCH -w n01
+#SBATCH -N 1
+#SBATCH -c 1
+```
 
-The simulation already gave us K2D,max values for the three flexibility
-classes:
+If `n01` is busy, change `-w n01` to any other node you have access to;
+nothing else needs changing. **Don't** touch `-N 1` (matching your
+template). One CPU core is plenty — extraction is single-threaded NumPy
+and closure is sub-second arithmetic.
 
-    rigid (K=100):  K2D,max ≈ 12 705 nm²
-    semi  (K=10):   K2D,max ≈    875 nm²
-    flex  (K=0.1):  K2D,max ≈    362 nm²
+## What each step actually does (physics → code)
 
-so the **target log-ratios** are
+### Background: the four-term decomposition
 
-    ln(K2D,rigid / K2D,flex) = 3.56 kBT   (flex − rigid)
-    ln(K2D,rigid / K2D,semi) = 2.68 kBT   (semi − rigid)
-    ln(K2D,semi  / K2D,flex) = 0.89 kBT   (flex − semi, sign convention −0.90)
+You measured K2D,max ≈ 12 705 / 875 / 362 nm² for rigid / semi / flex,
+so the cross-system log-ratios we need to reproduce are:
 
-The PhD's SI write-up (`ref/adhesion protein.pdf`, Eqs. S1–S23)
-decomposes ΔF_bind into four terms:
+    ln(K2D,rigid / K2D,flex) = 3.56 kBT     (flex − rigid)
+    ln(K2D,rigid / K2D,semi) = 2.68 kBT     (semi − rigid)
+    ln(K2D,semi  / K2D,flex) = 0.89 kBT     (flex − semi)
 
-    F_t        translational (S1)        — cancels if σ is the same
-    F_c        conformational (S4)       — 1.5·(D/R_e)²        Gaussian stretch
-    F_bond     end-volume (S17–S19)      — −ln(b²/A) rigid,    2-D capture
-                                          −ln(b³/(A·L)) floppy 3-D capture
-    F_rot      rotational (S22–S23)      — −ln(ω_RL / (ω_R·ω_L))  on S²
+Your S1–S23 SI gives ΔF_bind as four terms:
 
-Each of these is a number we extract from the trajectory:
+| term  | equation | physical meaning |
+|---|---|---|
+| F_t   | S1, ln(σb²)−1                            | translational; same σ across systems ⇒ cancels |
+| F_c   | S4, 1.5·(D/R_e)²                         | Gaussian-chain stretching to span the gap |
+| F_bond| S17–S19, −ln(b²/A) or −ln(b³/(A·L))     | end-volume / capture probability (2-D vs 3-D) |
+| F_rot | S22–S23, −ln[ω_RL / (ω_R·ω_L)]          | orientational restriction on S² |
 
-* `R_e` — free-chain end-to-end distance (per-frame mean)
-* `D`   — bound-chain vertical reach (per-frame mean, bound subset)
-* `L`   — vertical fluctuation range = R_max − D
-* `ω_R, ω_L, ω_RL` — orientational phase volumes of the chain axis
-  on S² (free) and S² × S² (bound joint), histogram-estimated
+Every one of these is a number we extract from the simulated chain
+configurations:
 
-So all four ΔF terms come from the same `chain_coords.npz` per system.
-The cluster pipeline just collects more frames into that npz so the
-histograms (especially ω_RL on the 4-D `S² × S²` joint) carry tighter
-statistics.
+* **R_e** — free-chain end-to-end distance ⟨|chain[12] − chain[3]|⟩ over
+  unbound R and L
+* **D** — bound-chain vertical reach ⟨chain[12].z − chain[3].z⟩, ligand
+  z flipped to share sign with R
+* **L** = R_max − D, the z range available to the binding bead
+* **ω_R, ω_L, ω_RL** — solid-angle phase volumes of the chain axis on S²
+  (free R, free L) and S² × S² (bound joint), histogram-estimated
 
-### Step 1 — `extract.sbatch` → `scripts/extract_chain_coords.py`
+### Step 1 — `extract.slurm` calls `extract_all.sh`
 
-For each (system, replica) tuple, parses one `traj.xyz` (the 2-4 GB
-trajectory) once and writes a small npz (~few MB) containing:
+The bash worker loops over the three systems and every `s***/` replica
+under each. For each `(system, replica)` tuple it runs
 
-* per-bead positions of all R chains and L chains, every frame
-* boolean "is bound this frame?" flag per protein per frame
-* the partner index (which L is each R bonded to, if any)
-* box dimensions and metadata
+```
+python <repo>/scripts/extract_chain_coords.py \
+    /mnt/nfs/ugstu/liuzx/2d_binding_MD/<system>/<sNNN> \
+    --out chain_coords/<system>/<sNNN>
+```
 
-This is the only heavy step (one pass over the 2-4 GB trajectory),
-which is why it's run as a SLURM array — one task per replica,
-parallel across the whole array.
+`extract_chain_coords.py` is the only step that touches the
+2–4 GB trajectory — it parses `traj.xyz` once and writes a small
+`chain_coords.npz` (few MB) containing every R and L chain's 13 bead
+positions every frame, plus the per-frame bound mask derived from
+`num_bonds_for_xyz_frames.dat`.
 
-Output: `chain_coords/<system>/s<NNN>/chain_coords.npz` per replica.
+**Requirements per replica:** `traj.xyz`, `mol.psf`, and
+`num_bonds_for_xyz_frames.dat` must all be present in the replica dir.
+If `num_bonds_for_xyz_frames.dat` is missing the replica is skipped
+with a `[no bond]` log line (a few of your earlier K01 replicas might
+not have it — let me know and I can generate it from `traj.xyz` if it
+turns out to matter).
 
-### Step 2 — `closure.sbatch` → two scripts
+**Already-done replicas are skipped** by checking for the output
+`chain_coords.npz` — same pattern as your auto-job idiom of
+`if [ ! -f "$s/bindsites_angle_distribution.tsv" ]; then ...`. So you
+can re-submit safely if some replicas didn't finish.
 
-**`scripts/combine_chain_coords.py`** — concatenates the per-replica
-npz files along the frames axis. Asserts that protein counts and box
-dimensions match (sanity check that you didn't mix systems). No
-re-extraction needed; this is just `numpy.concatenate`.
+**Walltime:** ~30 s per replica per system on 1 CPU. With ~23 replicas
+of K01 and ~10 each of K10/K100, total walltime is roughly
+20–30 minutes. The default time limit on `gpu` should cover it; if
+your queue cuts you off, just resubmit — incremental skip handles it.
 
-Output: `results/chain_coords/<system>/chain_coords.npz` (one merged
-file per system).
+### Step 2 — `closure.slurm` calls `closure_all.sh`
 
-**`scripts/phd_closure.py`** — evaluates the four formulas above on the
-merged data and writes the closure table + numpy archive. Also runs
-`scripts/phd_inputs.py` first (which prints the per-system inputs as a
-sanity check) and `scripts/plot_phd_closure.py` at the end (the bar
-chart).
+Two phases:
 
-Outputs:
+1. **Combine.** For each system, concatenate every per-replica
+   `chain_coords.npz` along the frames axis into one merged file at
+   `results/chain_coords/<system>/chain_coords.npz` (~few MB each).
+   Per-system metadata (protein counts, box dimensions) is asserted
+   identical across replicas as a sanity check.
+2. **Closure.** Runs `scripts/phd_inputs.py` (prints the per-system
+   R_e / D / L / n_b / bound counts as a sanity table), then
+   `scripts/phd_closure.py` (evaluates F_t, F_c, F_bond, F_rot and
+   writes the four-term table to `results/phd_closure.md` +
+   `results/phd_closure.npz`), then `scripts/plot_phd_closure.py` (bar
+   chart `results/figures/closure_phd.png` with the per-pair
+   contributions vs target).
 
-* `results/phd_closure.md` — human-readable closure table
-* `results/phd_closure_data.md` — auto-generated numeric tables
-* `results/phd_closure.npz` — all term values for further analysis
-* `results/figures/closure_phd.png` — the headline figure
+Sub-second walltime; you'll see the closure markdown in your job's
+log.
 
 ## Configurable knobs
 
-Both SBATCH scripts read a couple of env vars before defaulting:
+Both `extract_all.sh` and `closure_all.sh` read three env vars before
+falling back to defaults. Override any of them by exporting before
+sbatching, or by editing the script's top section.
 
-* `TRAJ_ROOT` (default `/mnt/nfs/ugstu/liuzx`) — where your per-system
-  per-replica trajectories live. Each replica should sit under
-  `$TRAJ_ROOT/<system>/s<NNN>/` with `traj.xyz`, `mol.psf`, and
-  `num_bonds_for_xyz_frames.dat` present.
-* `OUT_ROOT` (default `$PWD/chain_coords`) — where per-replica npz
-  files go before they're combined. Use a scratch location if the
-  job submission directory is on a slow filesystem; just remember to
-  pass the same path as `CHAIN_COORDS_IN` to `closure.sbatch`.
+| var | meaning | default |
+|---|---|---|
+| `TRAJ_ROOT` | parent of the `<system>/<sNNN>/` directories | `/mnt/nfs/ugstu/liuzx/2d_binding_MD` |
+| `OUT_ROOT` / `CHAIN_COORDS_IN` | where per-replica npz files live | `$PWD/chain_coords` |
+| `REPO_ROOT` | repo root containing `scripts/` | parent of `cluster/` (auto) |
 
-To use a different path:
+Example, if your data root is somewhere else:
 
 ```bash
-export TRAJ_ROOT=/path/to/your/trajectories
+export TRAJ_ROOT=/your/path/2d_binding_MD
 export OUT_ROOT=/scratch/$USER/chain_coords
-sbatch cluster/extract.sbatch
-CHAIN_COORDS_IN=$OUT_ROOT sbatch cluster/closure.sbatch
+sbatch extract.slurm
+CHAIN_COORDS_IN=$OUT_ROOT sbatch closure.slurm
 ```
 
 ## What to send back
 
-Just the three merged npz files:
+Three files, one per system, a few MB each:
 
-    results/chain_coords/15_120x120_K100_EPS05/chain_coords.npz
-    results/chain_coords/15_120x120_K10_EPS05/chain_coords.npz
-    results/chain_coords/22_120x120_K01_EPS05/chain_coords.npz
+```
+results/chain_coords/15_120x120_K100_EPS05/chain_coords.npz
+results/chain_coords/15_120x120_K10_EPS05/chain_coords.npz
+results/chain_coords/22_120x120_K01_EPS05/chain_coords.npz
+```
 
-These are ~few MB each (they're small even after merging many
-replicas, because we're storing chain coordinates only — 13 beads ×
-3 floats per protein per frame, not the full 144 k atoms).
+Drop them in the same paths locally (overwriting the single-replica
+versions on `main`), and I'll re-run
 
-I'll drop them into the same paths locally, re-run
-`python scripts/phd_closure.py && python scripts/plot_phd_closure.py`,
-and update `results/phd_closure.md` + `closure_phd.png` on `main`
-with the multi-replica numbers.
+```bash
+python scripts/phd_closure.py
+python scripts/plot_phd_closure.py
+```
 
-## Acceptance criteria once we have the multi-replica result
+to refresh `results/phd_closure.{md,npz}` and `closure_phd.png` with
+the multi-replica numbers, then push to `main`.
 
-The single-replica closure (current state of `main`) is:
+## Acceptance: what we're looking for
+
+The single-replica numbers currently on `main`:
 
 | pair | predicted | target | gap | closed |
 |---|---|---|---|---|
@@ -154,35 +193,60 @@ The single-replica closure (current state of `main`) is:
 
 For the multi-replica result to be a clean upgrade:
 
-1. **All three signs remain correct.** This was already passing on
-   single-replica; more samples shouldn't change it.
-2. **Semi − rigid stays at ≥ 95 % closure.** This is the strongest
-   physical sanity check that the four-term framework is right
-   (semi − rigid is squarely in S4's Gaussian-stretch regime where the
-   PhD's analytical approach is exact).
-3. **flex − rigid and semi − flex tighten toward 100 %.** The current
-   overshoots are dominated by F_rot's bin sensitivity on the
-   `S² × S²` joint histogram; more bound frames should make those
-   histograms denser and the overshoot smaller.
-
-If we see (1–3), we merge the multi-replica branch to `main` and the
-closure result becomes the headline for the write-up.
+1. **All three signs remain correct** — should be trivially true with
+   more data.
+2. **Semi − rigid stays at ≥ 95 % closure** — strongest physical
+   sanity check on the framework.
+3. **flex − rigid and semi − flex tighten toward 100 %** — current
+   overshoots are dominated by F_rot's bin sensitivity on a sparse
+   4-D `S² × S²` joint histogram. More bound frames → denser
+   histogram → tighter F_rot.
 
 ## Troubleshooting
 
-* **Array task X says "skip" for a replica that exists** — make sure
-  `$TRAJ_ROOT/<system>/s<NNN>/` has all three of `traj.xyz`,
-  `mol.psf`, and `num_bonds_for_xyz_frames.dat`. If `num_bonds_*` is
-  missing for a system that hasn't had the harmonised extractor run
-  on it, we'll need to handle that separately — let me know.
-* **`closure.sbatch` complains "no chain_coords.npz found"** —
+* **`extract_all.sh` prints `[no bond] <sys>/<replica>`** —
+  that replica's `num_bonds_for_xyz_frames.dat` is missing. Either
+  exclude it (just leave it as-is, the closure proceeds with the
+  replicas that do have it) or send me a note and I'll write a
+  one-off that builds the bond file from `traj.xyz`.
+* **`closure_all.sh` says `no per-replica chain_coords.npz under …`** —
   the per-replica extractions either didn't run or wrote somewhere
-  other than the default `$PWD/chain_coords/`. Pass
-  `CHAIN_COORDS_IN=/scratch/...` matching wherever you set `OUT_ROOT`.
-* **Closure numbers wildly off from `main`** — first check the inputs
-  table from `scripts/phd_inputs.py` against the values on `main`'s
-  `results/phd_closure.md`. If `n_b/frame`, `R_e`, or `D` look weird,
-  one of the replica trajectories may be from a different setup
-  (different protein count, different box). The combine step asserts
-  matching metadata; if it passes but the inputs look off, the
-  trajectories themselves differ.
+  other than the default. Pass `CHAIN_COORDS_IN=/the/right/path` to
+  match where you set `OUT_ROOT`.
+* **Closure numbers are wildly different from the single-replica
+  baseline** — first check the inputs table from `phd_inputs.py`. If
+  `n_b/frame`, `R_e`, or `D` look very different from the single-
+  replica numbers (10.28 / 9.48 / 9.15 for rigid; 3.92 / 8.45 / 7.96
+  for semi; 1.83 / 6.17 / 6.62 for flex), one of the replica
+  trajectories may be from a slightly different setup. The combine
+  step asserts matching protein counts and box dimensions, so if it
+  passed but inputs differ, the trajectories themselves have drifted
+  parameters.
+* **GPU partition refuses CPU job** — if the `gpu` queue has any
+  policy against CPU-only jobs (you would know this better than me),
+  switch `-p gpu` to whatever your CPU queue is named.
+
+## Files in this directory
+
+```
+cluster/
+├── README.md          ← this file
+├── extract.slurm      ← SBATCH wrapper, calls ./extract_all.sh
+├── extract_all.sh     ← bash worker, loops (system, replica) → extract_chain_coords.py
+├── closure.slurm      ← SBATCH wrapper, calls ./closure_all.sh
+└── closure_all.sh     ← bash worker, combines per-replica npz + runs closure
+```
+
+And the analysis modules they call (in the repo's `scripts/` dir):
+
+```
+scripts/
+├── extract_chain_coords.py    ← traj.xyz → chain_coords.npz per replica (heavy step)
+├── combine_chain_coords.py    ← merges per-replica npz along frames axis
+├── phd_inputs.py              ← per-system R_e, D, L, n_b, axis pops
+├── phd_formula.py             ← F_t (S1), F_c (S4), F_bond (S17-S19), F_rot (S22-S23)
+├── phd_closure.py             ← driver: assembles cross-system ΔΔF
+└── plot_phd_closure.py        ← closure bar chart
+```
+
+Holler with any questions. — Claude (via Zengxuan)
