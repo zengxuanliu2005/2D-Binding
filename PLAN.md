@@ -1,11 +1,14 @@
 # PLAN.md — 2D-Binding work tracker
 
 Status keys: `[x]` done · `[~]` in progress · `[ ]` todo
-Goal of the project: (1) a theory/decomposition that reproduces the measured
-`K2D,max` ratios, (2) a write-up, (3) a slide deck, (4) a poster.
+Goal of the project: (1) a theory/estimator that reproduces the measured
+`K2D,max` ratios without double-counting tether phase space, (2) a write-up,
+(3) a slide deck, (4) a poster.
 
 For the chronology and physical reasoning behind every approach we tried,
-see `JOURNEY.md`. For the closure that works, see `results/phd_closure.md`.
+see `JOURNEY.md`. For the current raw-data candidate, see
+`results/raw_tether_partition.md`. For the four-term baseline, see
+`results/phd_closure.md`.
 
 ---
 
@@ -36,10 +39,12 @@ see `JOURNEY.md`. For the closure that works, see `results/phd_closure.md`.
       not refit by us. Validating from raw simulation would need MD at
       multiple roughnesses (cluster).
 
-## Phase 2 — Decomposition (CLOSED — was the blocker)
+## Phase 2 — Decomposition / partition estimate (CLOSED for s001 prototype)
 
-The closure budget is closed within 1 kBT acceptance via the PhD's S1–S23
-four-term framework. **Semi − rigid lands at exactly 100 %.**
+The four-term budget closes within 1 kBT, but it risks double-counting because
+stretching, capture volume, and rotation are overlapping marginals. The current
+main candidate is therefore the raw tether partition estimate: one joint
+endpoint/orientation binding gate, streamed directly from raw `traj.xyz`.
 
 - [x] Extract per-chain coordinates from `traj.xyz` —
       `scripts/extract_chain_coords.py` → `results/chain_coords/<sys>/chain_coords.npz`
@@ -51,7 +56,7 @@ four-term framework. **Semi − rigid lands at exactly 100 %.**
       (the chain-rule MI captures coupling but the K2D ratio is dominated
       by absolute phase-volume differences). See `JOURNEY.md` §5 for the
       details.
-- [x] **PhD's S1–S23 four-term framework — this is the closure that works.**
+- [x] **PhD's S1–S23 four-term framework — baseline closure.**
       Code: `scripts/phd_formula.py`, `scripts/phd_inputs.py`,
       `scripts/phd_closure.py`, `scripts/plot_phd_closure.py`.
       Result:
@@ -68,50 +73,78 @@ four-term framework. **Semi − rigid lands at exactly 100 %.**
       S² × S² (not Schlitter on the in-plane disk). See
       `results/phd_closure.md` for the curated write-up.
 
-- **Acceptance met:** signs correct, all gaps within 1 kBT, semi−rigid
-  exact.
+- [x] **Raw tether partition-function prototype — current main candidate.**
+      Code: `scripts/raw_tether_partition_k2d.py`; result:
+      `results/raw_tether_partition.md`; figures:
+      `scripts/plot_raw_tether_story.py` →
+      `results/figures/raw_tether_mechanism.png`,
+      `results/figures/raw_vs_phd_closure.png`,
+      `results/figures/raw_tether_pipeline.png`.
+      It streams bead 3/11/12 from `outputs/<system>/s001/traj.xyz`,
+      excludes chains bound in the same raw frame, samples unbound R/L
+      endpoint pairs, scans membrane separation `h`, and applies RB-LB
+      capture plus angular compatibility as one joint gate.
+
+      | pair | raw soft | target | gap | closed |
+      |---|---:|---:|---:|---:|
+      | flex − rigid | +3.339 | +3.56 | −0.221 | 94 % |
+      | semi − rigid | +2.440 | +2.68 | −0.240 | 91 % |
+      | semi − flex  | −0.899 | −0.90 | +0.001 | 100 % |
+
+      The hard-gate sanity check gives a similar maximum gap
+      (0.217 kBT), while z-reach alone closes only 10–13 %. This supports
+      the polymer-tether partition-function route and shows that endpoint
+      height alone is not the mechanism.
+
+- **Acceptance met for s001 prototype:** signs correct, all raw-partition gaps
+  within 0.24 kBT, and the four-term baseline remains a useful interpretive
+  comparison.
 
 ## Phase 3 — Validate
 
-- [ ] **Bootstrap error bars on each of the four ΔF terms.** Resample
-      frames with replacement, recompute, report σ. ~5 min of local compute,
-      maybe 100 lines of code in a new `scripts/phd_closure_bootstrap.py`.
-      **Required for the write-up.**
-- [ ] (Optional) Bin-sensitivity sweep on `F_rot`'s histogram —
-      `(n_bins_marg, n_bins_joint)` over (8, 4) … (20, 6). The
-      ΔΔF_rot shifts by up to 0.5 kBT across that range, which sets the
-      uncertainty on flex − rigid and semi − flex.
-- [ ] (Optional) Parametric replacement for the F_rot histogram —
-      Bingham distribution on S² or normalising flow. Would tighten the
-      0.4 kBT residual analytically. Bias-variance trade-off only; not
-      required for the closure to stand. See `JOURNEY.md` §9.2.
-- **Acceptance:** closure numbers reported as point ± σ rather than point
-  estimates; the closure conclusion is stable across estimator choices.
+- [ ] **Bootstrap error bars on the raw tether partition estimate.** Resample
+      raw frames / unbound R-L pairs and recompute `max_h K2D_eff(h)` ratios.
+      Report point ± σ for soft kernel and hard gate. This is the highest
+      priority validation for the write-up.
+- [ ] **Tail-sampling convergence check for the flexible system.** Sweep random
+      pair count and bond-vector samples per pair. The K01 extended tail is the
+      likely remaining uncertainty.
+- [ ] **Multi-seed / multi-replica confirmation if data become available.**
+      The local repo has only `s001`; cluster replicas would test whether the
+      0.24 kBT max gap is stable.
+- [ ] (Optional baseline) Bootstrap the PhD four-term closure and sweep
+      `F_rot` histogram bins. This is now secondary, useful mainly for comparing
+      the old decomposition to the raw joint-partition estimator.
+- **Acceptance:** raw partition numbers reported as point ± σ; signs and
+  `≤ 0.3 kBT` max gap remain stable across resampling choices.
 
 ## Phase 4 — Deliverables
 
-- [ ] Write-up: methods + results + decomposition table/figure. Headline
-      figure is `results/figures/closure_phd.png`. The qualitative
-      evidence figure is `results/figures/e2e_distributions.png` (chain
-      stretching cost visible directly in the bound vs unbound R_ee
-      shift for K01).
+- [ ] Write-up: methods + results + raw partition table/figure. Headline
+      figures are `results/figures/raw_tether_mechanism.png`,
+      `results/figures/raw_vs_phd_closure.png`, and
+      `results/figures/raw_tether_pipeline.png`. Keep
+      `results/figures/closure_phd.png` as the four-term baseline figure.
 - [ ] Finish the slide deck (replace the inconsistent decomposition
-      slides 21 / 24 with the closure that works).
+      slides 21 / 24 with the raw joint-partition picture and the baseline
+      comparison).
 - [ ] Poster: one-page distillation of the deck.
 - **Acceptance:** each artifact reviewed against the verified numbers in
+  `results/raw_tether_partition.md`, with the baseline numbers checked against
   `results/phd_closure.md`.
 
 ## Phase 5 (optional) — Multi-replica run on the cluster
 
-The s001-only result passes acceptance. A multi-replica run would tighten
-F_rot's histogram. Packaging is on branch `analysis/cluster-pipeline`
-(SBATCH-ready in PhD's cluster style). **The PhD declined to run it.**
-Available if the decision reverses.
+The s001-only raw partition result passes prototype acceptance. A multi-replica
+run would tighten the endpoint/angle tail probabilities and also improve the
+old `F_rot` histogram baseline. Packaging is on branch
+`analysis/cluster-pipeline` (SBATCH-ready in PhD's cluster style). **The PhD
+declined to run it.** Available if the decision reverses.
 
 - Cluster handoff doc: `cluster/README.md` on
   `analysis/cluster-pipeline`.
-- Acceptance if rerun: semi − rigid stays at ≥ 95 %; the other two pairs
-  tighten toward 100 %.
+- Acceptance if rerun: raw-partition signs stay correct and max gap remains
+  near the current 0.24 kBT scale.
 
 ---
 
@@ -133,6 +166,10 @@ Available if the decision reverses.
       32 % closure. The PhD's S1–S23 framework uses analytical formulas for
       F_t / F_c / F_bond and a histogram on S² / S² × S² for F_rot — see
       `scripts/phd_formula.py`.
+- [x] Raw joint-partition route: current preferred interpretation. It treats
+      endpoint reach, RB-LB capture, and binding-angle compatibility as one
+      probability kernel, so the same phase-space restriction is not counted
+      again as separate `F_c`, `F_bond`, and `F_rot` terms.
 - [ ] **(Open)** receptor/ligand K asymmetry in the actual K10 production
       run — `ref/nvt-md.py` shows receptor K=100 / ligand K=10, but the
       simulation data shows R and L equally flexible. Worth confirming

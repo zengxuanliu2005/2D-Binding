@@ -8,8 +8,9 @@ results live in this repo. It's written so that someone (you, or
 your AI coding agent) can pick up the work cleanly without re-tracing
 the dead ends.
 
-If you just want the result: skip to **§7 The PhD's S1–S23 four-term
-decomposition (this is the closure that works)**.
+If you just want the current result: skip to **§8 Raw tether partition
+estimate (current main candidate)**. For the earlier four-term baseline,
+see **§7 The PhD's S1–S23 four-term decomposition**.
 
 ---
 
@@ -229,11 +230,14 @@ Reading the SI carefully, the four terms are:
     F_bond  (S17–S19)   end-volume         −ln(b²/A) or −ln(b³/(A·L))
     F_rot   (S22–S23)   rotational         −ln[ω_RL / (ω_R · ω_L)]
 
-This is the framework that worked.
+This was the first framework that worked numerically. It remains the
+baseline, but it is not the cleanest final theory because `F_c`,
+`F_bond`, and `F_rot` are low-dimensional views of overlapping tether
+phase space.
 
 ---
 
-## 7. The PhD's S1–S23 four-term decomposition (this is the closure that works)
+## 7. The PhD's S1–S23 four-term decomposition (baseline closure)
 
 `scripts/phd_formula.py` + `phd_inputs.py` + `phd_closure.py`
 implement S1, S4, S17–S19, S22–S23 directly. Inputs come from
@@ -308,13 +312,89 @@ all three were necessary to close the budget:
 
 ---
 
-## 8. Cluster pipeline — packaged, not run
+## 8. Raw tether partition estimate (current main candidate)
 
-The s001-only result closes the budget within acceptance. The
-multi-replica run on the cluster would tighten F_rot (denser histogram
-on the 4D S²×S² joint with more bound frames) — could conceivably
-move flex−rigid from 111 % toward 100 % and semi−flex from 141 %
-toward 100 %.
+The four-term closure raised a conceptual problem: `F_c`, `F_bond`, and
+`F_rot` all depend on the same endpoint/orientation phase space. Adding
+them as independent terms can double-count parts of the tether restriction.
+The references downloaded into `ref/potential/` point to a cleaner
+polymer-tether partition-function route:
+
+    K2D_eff(h) = K0 * A * q_t(LR; h) / [q_t(L; h) * q_t(R; h)]
+
+For this project the empirical equivalent is:
+
+    K2D_eff(h) proportional to K0 * P_tether(capture + angle gate | h)
+
+where the capture and angle constraints are evaluated once as a joint gate.
+The microscopic `K0` cancels in cross-system ratios, so the comparison uses
+`max_h K2D_eff(h)` as the `K2D,max` proxy.
+
+`scripts/raw_tether_partition_k2d.py` implements a raw-data prototype:
+
+* Reads `outputs/<system>/s001/traj.xyz` directly, not
+  `results/chain_coords/<sys>/chain_coords.npz`.
+* Streams bead 3/11/12 for every protein.
+* Excludes chains bound in the same raw frame using
+  `num_bonds_for_xyz_frames.dat`.
+* Samples unbound R × L endpoint pairs across trial membrane separations `h`.
+* Applies RB-LB radial binding and binding-angle compatibility as one
+  Boltzmann kernel, with a hard-gate sanity check.
+
+**Result (branch `analysis/raw-tether-k2d`):**
+
+| pair | raw soft | target | gap | closed |
+|---|---:|---:|---:|---:|
+| flex − rigid | +3.339 | +3.56 | −0.221 | 94 % |
+| semi − rigid | +2.440 | +2.68 | −0.240 | 91 % |
+| semi − flex  | −0.899 | −0.90 | +0.001 | 100 % |
+
+Hard-gate sanity check:
+
+| pair | raw hard | target | gap | closed |
+|---|---:|---:|---:|---:|
+| flex − rigid | +3.392 | +3.56 | −0.168 | 95 % |
+| semi − rigid | +2.463 | +2.68 | −0.217 | 92 % |
+| semi − flex  | −0.929 | −0.90 | −0.029 | 103 % |
+
+The z-reach-only variant closes only 10–13 %, so endpoint height alone
+is not the mechanism. The important object is the joint probability that
+the two tethered binding sites land in the radial capture region with
+compatible binding angles.
+
+This is now the preferred main line:
+
+* It improves the maximum gap from the four-term baseline's 0.40 kBT to
+  0.24 kBT for the soft kernel.
+* It gives the correct signs for all three pair comparisons.
+* It nearly exactly hits semi − flex, the hardest sign-sensitive contrast.
+* It avoids assigning overlapping phase-space restrictions to independent
+  additive terms.
+
+The result is still an s001-only prototype. The next required validation is
+bootstrap / multi-seed uncertainty, especially for the flexible-system tail
+probability.
+
+* commits: `88f250c docs: review polymer-tether binding framework`,
+  `478fcab feat: raw tether partition K2D prototype`,
+  `7150e5d figures: add raw tether story visuals`
+* outputs: `results/raw_tether_partition.md`,
+  `results/raw_tether_partition.npz`,
+  `results/figures/raw_tether_mechanism.png`,
+  `results/figures/raw_vs_phd_closure.png`,
+  `results/figures/raw_tether_pipeline.png`
+* reproduce: `conda activate phys && python scripts/raw_tether_partition_k2d.py`
+* figures: `conda activate phys && python scripts/plot_raw_tether_story.py`
+
+---
+
+## 9. Cluster pipeline — packaged, not run
+
+The s001-only raw partition result closes the budget within prototype
+acceptance. A multi-replica run on the cluster would test whether the
+endpoint/angle tail probabilities, especially for K01, stay stable across
+seeds. It would also tighten the old four-term `F_rot` histogram baseline
+if that comparison is kept in the write-up.
 
 The packaging is on branch `analysis/cluster-pipeline`:
 
@@ -343,14 +423,23 @@ package is left intact on the branch for whoever wants to revisit.
 
 ---
 
-## 9. Methodological refinements that remain open
+## 10. Methodological refinements that remain open
 
-These are not blockers for the closure — they're polish, captured
-here so the next person doesn't reinvent them.
+These are not blockers for the s001 prototype — they're captured here so the
+next person doesn't reinvent them.
 
-### 9.1 Why is F_rot the limiting term?
+### 10.1 Raw partition uncertainty: flexible-tail sampling
 
-The residual 0.4 kBT on flex−rigid and semi−flex sits in F_rot.
+The current raw partition estimate uses 500000 random R/L pairs per system
+and 32 bond-vector samples per pair and membrane separation. That is enough
+to show the method works, but the flexible system is controlled by extended
+tail conformations. The next estimator step is bootstrap / convergence:
+resample raw frames, sweep pair count, sweep bond-vector samples, and report
+point ± σ for `max_h K2D_eff(h)` ratios.
+
+### 10.2 Why F_rot was the limiting term in the four-term baseline
+
+The four-term residual 0.4 kBT on flex−rigid and semi−flex sits in F_rot.
 F_t cancels by construction (all three systems have ~equal protein
 density). F_c uses single-chain D and R_e — direct measurements with
 sub-percent precision. F_bond is closed-form `ln(L/b)` and the L
@@ -360,7 +449,7 @@ visible bin sensitivity when you sweep `(n_bins_marg, n_bins_joint)`
 from (8, 4) to (20, 6) — ΔΔF_rot shifts by up to 0.5 kBT across that
 range.
 
-### 9.2 Parametric replacement: Bingham or normalizing flow
+### 10.3 Parametric replacement: Bingham or normalizing flow
 
 The natural fix is to replace the histogram with a parametric density
 on S². Two candidates:
@@ -380,7 +469,7 @@ Neither requires more MD; both run on the existing `chain_coords.npz`.
 Estimated complexity: Bingham ~150 lines, flow ~300 lines + GPU
 optional.
 
-### 9.3 Why CNN is the wrong shape for this problem
+### 10.4 Why CNN is the wrong shape for this problem
 
 Briefly considered (and discarded): CNN feeding chain coordinates →
 ΔF. Three reasons it doesn't fit:
@@ -395,7 +484,7 @@ Briefly considered (and discarded): CNN feeding chain coordinates →
 Normalizing flows for density estimation on S² are the relevant ML
 tool, not CNN.
 
-### 9.4 The DFT analogy (worth labelling honestly)
+### 10.5 The DFT analogy (worth labelling honestly)
 
 User pointed out the four-term decomposition has the same structural
 shape as DFT's `T_s + V_ext + J + E_xc` split — three analytical
@@ -408,31 +497,32 @@ analogy gave us a vocabulary for describing the situation
 implementation. Bingham / flow refinements are borrowed from
 *directional statistics*, not DFT.
 
-### 9.5 Bootstrap error bars
+### 10.6 Bootstrap error bars for the baseline
 
-Currently the closure numbers are point estimates with no
+The four-term baseline numbers are point estimates with no
 uncertainty quantification. Resampling frames with replacement,
 recomputing the four terms, and reporting σ per term is local
 (~minutes) and would let the write-up state the closure as
 "+3.96 ± σ kBT vs target +3.56" rather than the point estimate
-"111 %". This is required for any publication and is the most
-obvious next step on the closure side.
+"111 %". This is secondary to raw-partition bootstrapping, but useful
+for a fair baseline comparison.
 
 ---
 
-## 10. Suggested next steps (in priority order)
+## 11. Suggested next steps (in priority order)
 
-1. **Bootstrap error bars on the four terms.** ~5 min of local
-   compute, ~50 lines of code in a new `scripts/phd_closure_bootstrap.py`.
-   Required for the write-up.
+1. **Bootstrap / convergence for the raw tether partition estimate.**
+   Resample raw frames and R/L endpoint pairs; sweep random pair count
+   and bond-vector samples. Report soft-kernel and hard-gate
+   `max_h K2D_eff(h)` ratios as point ± σ.
 
 2. **Phase 4 deliverables** — write-up, slide deck, poster. The
-   headline figure is `results/figures/closure_phd.png`; the
-   illustrative supporting figure is `results/figures/e2e_distributions.png`
-   (showing the chain stretching cost as the qualitative source of
-   the K2D ratio).
+   headline figures are `results/figures/raw_tether_mechanism.png`,
+   `results/figures/raw_vs_phd_closure.png`, and
+   `results/figures/raw_tether_pipeline.png`. Keep
+   `results/figures/closure_phd.png` as the four-term baseline.
 
-3. **(Optional) Bingham fit for F_rot.** Would tighten the 0.4 kBT
+3. **(Optional baseline) Bingham fit for F_rot.** Would tighten the 0.4 kBT
    residual on flex−rigid and semi−flex. Not required for the closure
    to stand; useful as a "methods appendix" enhancement.
 
@@ -447,7 +537,7 @@ obvious next step on the closure side.
 
 ---
 
-## 11. How to navigate this repo
+## 12. How to navigate this repo
 
 | file / directory | what's in it |
 |---|---|
@@ -456,11 +546,15 @@ obvious next step on the closure side.
 | `PLAN.md` | live task tracker with phase status |
 | `CLAUDE.md` | operational onboarding (units, conventions, git discipline) |
 | `ref/` | reference papers (Hu 2013, Xu 2015, Numata 2012, adhesion protein.pdf, nvt-md.py) |
-| `scripts/phd_*.py` | the closure that works (S1–S23 framework) |
+| `scripts/raw_tether_partition_k2d.py` | current raw-data partition estimate |
+| `scripts/plot_raw_tether_story.py` | story figures for the raw partition route |
+| `scripts/phd_*.py` | four-term baseline closure (S1–S23 framework) |
 | `scripts/extract_*.py` | trajectory → harmonised observables |
 | `scripts/{conf,mi,decomposition}_*.py` | sessions 2.5 / 3 / 4 / 5 (the closures that didn't work) |
+| `results/raw_tether_partition.md` | current raw partition result |
 | `results/phd_closure.md` | curated closure write-up |
-| `results/figures/closure_phd.png` | the headline figure |
+| `results/figures/raw_*.png` | current story / closure comparison figures |
+| `results/figures/closure_phd.png` | four-term baseline figure |
 | `results/figures/e2e_distributions.png` | the qualitative-evidence figure |
 | `cluster/` | multi-replica SBATCH pipeline (packaged, not run) |
 | `outputs/<sys>/s001/` | per-system MD outputs (read-only; git-ignored) |
@@ -471,6 +565,8 @@ For reproducing any of the numbers in this document:
 
 ```bash
 conda activate phys
+python scripts/raw_tether_partition_k2d.py # raw partition table
+python scripts/plot_raw_tether_story.py    # raw story figures
 python scripts/phd_closure.py            # closure table
 python scripts/plot_phd_closure.py       # closure_phd.png
 python scripts/k2d_sanity.py             # K2D sanity vs published K2D,max
@@ -478,15 +574,18 @@ python scripts/sanity_chain_coords.py    # validate chain_coords.npz
 python scripts/validate_against_legacy.py # validate extracted observables
 ```
 
-All sub-second except the validation pass.
+The raw partition pass streams raw trajectories and samples random pairs; the
+others are sub-second except the validation pass.
 
 ---
 
-## 12. Git milestones
+## 13. Git milestones
 
 ```
-main (041cb0e)  Merge entropy/phd-formula: closure that works
+main after raw-tether merge
             │
+            ├── branch: analysis/raw-tether-k2d
+            │       raw tether partition prototype + story figures
             ├── tag: phase2-phd-closure-attempt  (the four-term closure)
             ├── tag: phase2-conf-entropy-prototype  (the Schlitter first cut)
             │
