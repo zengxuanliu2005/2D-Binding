@@ -1,13 +1,25 @@
 # Running the closure pipeline on the cluster
 
+> **Status:** Dr. H reviewed this pipeline and declined to run it on
+> the multi-replica data, on the grounds that her existing analysis
+> already processes the trajectories and she doesn't expect the
+> multi-replica result to change her conclusion. The s001-only closure
+> on `main` (tag `phase2-phd-closure-attempt`) already passes
+> acceptance — within 0.4 kBT, signs correct, semi−rigid at exactly
+> 100 %. **This pipeline is left in place as an option** for whoever
+> wants to revisit — no rewrite needed, just `sbatch extract.slurm`
+> followed by `sbatch closure.slurm`. The s001 closure is the headline
+> result; what's below was written for the case where the
+> multi-replica run did happen.
+
 Hi Dr. H (cc Zengxuan) — this folder contains everything to run the
 S1–S23 four-term ΔF closure on **all replicas** of the three K-systems
 under your `2d_binding_MD/` tree on the cluster. The single-replica
 analysis already runs locally and reproduces all three K2D,max
 log-ratios within 1 kBT with correct signs (semi−rigid lands at
-exactly 100 %); doing this on the full multi-replica data will tighten
-F_rot (the rotational orientation entropy) which currently has bin-
-sensitivity on flex−rigid and semi−flex.
+exactly 100 %); doing this on the full multi-replica data **would**
+tighten F_rot (the rotational orientation entropy) which currently has
+bin-sensitivity on flex−rigid and semi−flex.
 
 ## TL;DR — what to run
 
