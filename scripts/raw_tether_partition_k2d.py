@@ -18,7 +18,9 @@ from __future__ import annotations
 
 import argparse
 import math
+import os
 import sys
+from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -66,6 +68,11 @@ class RawFeatures:
     R_term: np.ndarray
     L_end: np.ndarray
     L_term: np.ndarray
+    # per-frame (list of arrays, one element per frame; empty list for frames with no unbound)
+    R_end_per_frame: list = None  # type: ignore
+    R_term_per_frame: list = None  # type: ignore
+    L_end_per_frame: list = None  # type: ignore
+    L_term_per_frame: list = None  # type: ignore
 
 
 def angle_deg(a: np.ndarray, b: np.ndarray) -> np.ndarray:
@@ -122,6 +129,10 @@ def extract_raw_unbound_features(sys_dir: Path, label: str) -> RawFeatures:
     R_term: list[np.ndarray] = []
     L_end: list[np.ndarray] = []
     L_term: list[np.ndarray] = []
+    R_end_per_frame: list[np.ndarray] = []
+    R_term_per_frame: list[np.ndarray] = []
+    L_end_per_frame: list[np.ndarray] = []
+    L_term_per_frame: list[np.ndarray] = []
     n_frames = 0
 
     for frame_idx, coords in iter_frames(sys_dir / "traj.xyz", subset_indices=needed):
@@ -136,6 +147,11 @@ def extract_raw_unbound_features(sys_dir: Path, label: str) -> RawFeatures:
                     else:
                         bound_L.add(slot)
 
+        fr_R_end: list[np.ndarray] = []
+        fr_R_term: list[np.ndarray] = []
+        fr_L_end: list[np.ndarray] = []
+        fr_L_term: list[np.ndarray] = []
+
         for slot, atoms in enumerate(R_atoms):
             if slot in bound_R:
                 continue
@@ -143,8 +159,12 @@ def extract_raw_unbound_features(sys_dir: Path, label: str) -> RawFeatures:
             p_head = coords[idx[head]]
             p_partner = coords[idx[terminal_partner]]
             p_bind = coords[idx[bind]]
-            R_end.append(min_image(p_bind - p_head, box))
-            R_term.append(min_image(p_bind - p_partner, box))
+            vec_end = min_image(p_bind - p_head, box)
+            vec_term = min_image(p_bind - p_partner, box)
+            R_end.append(vec_end)
+            R_term.append(vec_term)
+            fr_R_end.append(vec_end)
+            fr_R_term.append(vec_term)
 
         for slot, atoms in enumerate(L_atoms):
             if slot in bound_L:
@@ -153,9 +173,17 @@ def extract_raw_unbound_features(sys_dir: Path, label: str) -> RawFeatures:
             p_head = coords[idx[head]]
             p_partner = coords[idx[terminal_partner]]
             p_bind = coords[idx[bind]]
-            L_end.append(min_image(p_bind - p_head, box))
-            L_term.append(min_image(p_bind - p_partner, box))
+            vec_end = min_image(p_bind - p_head, box)
+            vec_term = min_image(p_bind - p_partner, box)
+            L_end.append(vec_end)
+            L_term.append(vec_term)
+            fr_L_end.append(vec_end)
+            fr_L_term.append(vec_term)
 
+        R_end_per_frame.append(np.asarray(fr_R_end, dtype=np.float64))
+        R_term_per_frame.append(np.asarray(fr_R_term, dtype=np.float64))
+        L_end_per_frame.append(np.asarray(fr_L_end, dtype=np.float64))
+        L_term_per_frame.append(np.asarray(fr_L_term, dtype=np.float64))
         n_frames = frame_idx + 1
 
     return RawFeatures(
@@ -168,6 +196,10 @@ def extract_raw_unbound_features(sys_dir: Path, label: str) -> RawFeatures:
         R_term=np.asarray(R_term, dtype=np.float64),
         L_end=np.asarray(L_end, dtype=np.float64),
         L_term=np.asarray(L_term, dtype=np.float64),
+        R_end_per_frame=R_end_per_frame,
+        R_term_per_frame=R_term_per_frame,
+        L_end_per_frame=L_end_per_frame,
+        L_term_per_frame=L_term_per_frame,
     )
 
 
@@ -243,6 +275,88 @@ def estimate_area_curve(
     }
 
 
+def _boot_one(args: tuple) -> tuple[float, float, float]:
+    """Single bootstrap iteration — top-level for pickling."""
+    R_parts, R_term_parts, L_parts, L_term_parts, R_label, L_label, \
+        h_vals, sample_pairs, bond_samples, seed, ib = args
+
+    rng_frame = np.random.default_rng(seed + ib)
+    n_frames = len(R_parts)
+    idx = rng_frame.integers(0, n_frames, size=n_frames)
+
+    def _pool(parts):
+        selected = [parts[i] for i in idx if len(parts[i]) > 0]
+        return np.concatenate(selected) if selected else np.empty((0, 3))
+
+    boot_feat = RawFeatures(
+        sys_name="", label="bootstrap",
+        n_frames=n_frames, n_R=R_label, n_L=L_label,
+        R_end=_pool(R_parts), R_term=_pool(R_term_parts),
+        L_end=_pool(L_parts), L_term=_pool(L_term_parts),
+    )
+    boot_rng = np.random.default_rng(seed + ib + 1000000)
+    curve = estimate_area_curve(boot_feat, h_vals, sample_pairs, bond_samples, boot_rng)
+    return (
+        float(curve["soft_area"][int(np.argmax(curve["soft_area"]))]),
+        float(curve["hard_area"][int(np.argmax(curve["hard_area"]))]),
+        float(curve["z_only_area"][int(np.argmax(curve["z_only_area"]))]),
+    )
+
+
+def bootstrap_area_curves(
+    feat: RawFeatures,
+    h_values: np.ndarray,
+    sample_pairs: int,
+    bond_samples: int,
+    n_bootstrap: int,
+    seed: int,
+    n_jobs: int = 1,
+) -> dict[str, np.ndarray]:
+    """Frame-level bootstrap with optional multiprocessing.
+
+    Args:
+        n_jobs: Number of parallel workers (1 = sequential).
+    """
+    # Pre-extract per-frame arrays as lists for pickling.
+    R_parts = feat.R_end_per_frame
+    R_term_parts = feat.R_term_per_frame
+    L_parts = feat.L_end_per_frame
+    L_term_parts = feat.L_term_per_frame
+
+    tasks = [
+        (R_parts, R_term_parts, L_parts, L_term_parts,
+         feat.n_R, feat.n_L, h_values, sample_pairs, bond_samples,
+         seed, ib)
+        for ib in range(n_bootstrap)
+    ]
+
+    max_soft = np.empty(n_bootstrap)
+    max_hard = np.empty(n_bootstrap)
+    max_zonly = np.empty(n_bootstrap)
+
+    if n_jobs <= 1:
+        for ib in range(n_bootstrap):
+            if ib % 5 == 0:
+                print(f"    bootstrap {ib}/{n_bootstrap}...", flush=True)
+            s, h, z = _boot_one(tasks[ib])
+            max_soft[ib] = s
+            max_hard[ib] = h
+            max_zonly[ib] = z
+    else:
+        import multiprocessing as mp
+        mp.set_start_method("fork", force=True)
+        with ProcessPoolExecutor(max_workers=n_jobs) as ex:
+            for ib, (s, h, z) in enumerate(ex.map(_boot_one, tasks)):
+                if ib % 5 == 0:
+                    print(f"    bootstrap {ib}/{n_bootstrap}...", flush=True)
+                max_soft[ib] = s
+                max_hard[ib] = h
+                max_zonly[ib] = z
+
+    print(f"    bootstrap {n_bootstrap}/{n_bootstrap} done.", flush=True)
+    return {"soft_area": max_soft, "hard_area": max_hard, "z_only_area": max_zonly}
+
+
 def pair_rows(maxima: dict[str, dict], key: str) -> list[dict]:
     specs = [
         ("flex-rigid", "flex", "rigid"),
@@ -272,6 +386,7 @@ def write_report(
     maxima: dict[str, dict],
     sample_pairs: int,
     bond_samples: int,
+    bootstrap_max: dict[str, dict[str, np.ndarray]] | None = None,
 ) -> None:
     with open(out_md, "w") as fp:
         fp.write("# Raw tether partition K2D prototype\n\n")
@@ -295,25 +410,69 @@ def write_report(
                      f"{len(f.R_end)} | {len(f.L_end)} |\n")
 
         fp.write("\n## Maxima over membrane separation\n\n")
-        fp.write("| label | h*_soft (sigma) | max soft area | h*_hard (sigma) | "
-                 "max hard area | h*_zonly (sigma) | max z-only area |\n")
-        fp.write("|---|---:|---:|---:|---:|---:|---:|\n")
-        for label in ("rigid", "semi", "flex"):
-            m = maxima[label]
-            fp.write(f"| {label} | {m['soft_h']:.2f} | {m['soft_area']:.6g} | "
-                     f"{m['hard_h']:.2f} | {m['hard_area']:.6g} | "
-                     f"{m['z_only_h']:.2f} | {m['z_only_area']:.6g} |\n")
+        if bootstrap_max is not None:
+            fp.write("| label | h*_soft (sigma) | max soft area | h*_hard (sigma) | "
+                     "max hard area | h*_zonly (sigma) | max z-only area |\n")
+            fp.write("|---|---:|---:|---:|---:|---:|---:|\n")
+            for label in ("rigid", "semi", "flex"):
+                m = maxima[label]
+                fp.write(f"| {label} | {m['soft_h']:.2f} | {m['soft_area']:.6g} | "
+                         f"{m['hard_h']:.2f} | {m['hard_area']:.6g} | "
+                         f"{m['z_only_h']:.2f} | {m['z_only_area']:.6g} |\n")
+
+            fp.write("\n## Bootstrap statistics (point estimate ± σ over frames)\n\n")
+            fp.write("| label | soft area (point ± σ) | hard area (point ± σ) | z-only area (point ± σ) |\n")
+            fp.write("|---|---|---|---|\n")
+            for label in ("rigid", "semi", "flex"):
+                s_mean = np.mean(bootstrap_max[label]["soft_area"])
+                s_std = np.std(bootstrap_max[label]["soft_area"])
+                h_mean = np.mean(bootstrap_max[label]["hard_area"])
+                h_std = np.std(bootstrap_max[label]["hard_area"])
+                z_mean = np.mean(bootstrap_max[label]["z_only_area"])
+                z_std = np.std(bootstrap_max[label]["z_only_area"])
+                fp.write(f"| {label} | {s_mean:.6g} ± {s_std:.6g} | "
+                         f"{h_mean:.6g} ± {h_std:.6g} | "
+                         f"{z_mean:.6g} ± {z_std:.6g} |\n")
+        else:
+            fp.write("| label | h*_soft (sigma) | max soft area | h*_hard (sigma) | "
+                     "max hard area | h*_zonly (sigma) | max z-only area |\n")
+            fp.write("|---|---:|---:|---:|---:|---:|---:|\n")
+            for label in ("rigid", "semi", "flex"):
+                m = maxima[label]
+                fp.write(f"| {label} | {m['soft_h']:.2f} | {m['soft_area']:.6g} | "
+                         f"{m['hard_h']:.2f} | {m['hard_area']:.6g} | "
+                         f"{m['z_only_h']:.2f} | {m['z_only_area']:.6g} |\n")
 
         for key, title in [("soft_area", "Soft Boltzmann kernel"),
                            ("hard_area", "Hard gate sanity check"),
                            ("z_only_area", "Z-reach geometry only")]:
             fp.write(f"\n## Cross-system closure: {title}\n\n")
-            fp.write("| pair | predicted | target | gap | closed |\n")
-            fp.write("|---|---:|---:|---:|---:|\n")
-            for row in pair_rows(maxima, key):
-                fp.write(f"| {row['pair']} | {row['ddF']:+.3f} | "
-                         f"{row['target']:+.2f} | {row['gap']:+.3f} | "
-                         f"{row['closed']:+.0f}% |\n")
+            if bootstrap_max is not None and key != "z_only_area":
+                fp.write("| pair | predicted (point ± σ) | target | gap | closed |\n")
+                fp.write("|---|---:|---:|---:|---:|\n")
+                for name, a, b in [
+                    ("flex-rigid", "flex", "rigid"),
+                    ("semi-rigid", "semi", "rigid"),
+                    ("semi-flex", "semi", "flex"),
+                ]:
+                    boot_a = bootstrap_max[a][key]
+                    boot_b = bootstrap_max[b][key]
+                    ratios = boot_a / boot_b
+                    ddF_samples = -np.log(ratios)
+                    ddF_mean = float(np.mean(ddF_samples))
+                    ddF_std = float(np.std(ddF_samples))
+                    target = TARGETS[name]
+                    gap = ddF_mean - target
+                    closed = 100.0 * ddF_mean / target if target else float("nan")
+                    fp.write(f"| {name} | {ddF_mean:+.3f} ± {ddF_std:.3f} | "
+                             f"{target:+.2f} | {gap:+.3f} | {closed:+.0f}% |\n")
+            else:
+                fp.write("| pair | predicted | target | gap | closed |\n")
+                fp.write("|---|---:|---:|---:|---:|\n")
+                for row in pair_rows(maxima, key):
+                    fp.write(f"| {row['pair']} | {row['ddF']:+.3f} | "
+                             f"{row['target']:+.2f} | {row['gap']:+.3f} | "
+                             f"{row['closed']:+.0f}% |\n")
 
         fp.write("\n## Interpretation\n\n")
         fp.write("- `soft_area` integrates `exp(-U_bind/kBT)-1` over the lateral RB-LB "
@@ -325,12 +484,19 @@ def write_report(
                  "included only to show how much of the trend comes from vertical reach.\n")
         fp.write("- This is an s001-only raw-data prototype. It is intended to test the "
                  "polymer-tether partition-function route, not yet as a final estimator.\n")
+        if bootstrap_max is not None:
+            n_boot = len(bootstrap_max["rigid"]["soft_area"])
+            fp.write(f"- Bootstrap: `n={n_boot}` frame-level resamples (with replacement). "
+                     "ddF σ propagated from bootstrap ratios via `std(-ln(ratio))`.\n")
 
         fp.write("\n## How to reproduce\n\n")
         fp.write("```bash\n")
         fp.write("conda activate phys\n")
-        fp.write("python scripts/raw_tether_partition_k2d.py\n")
-        fp.write("```\n")
+        fp.write("python scripts/raw_tether_partition_k2d.py")
+        if bootstrap_max is not None:
+            n_boot = len(bootstrap_max["rigid"]["soft_area"])
+            fp.write(f" --bootstrap --n-bootstrap {n_boot}")
+        fp.write("\n```\n")
 
 
 def main(argv: list[str]) -> int:
@@ -341,6 +507,9 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--h-max", type=float, default=24.0)
     parser.add_argument("--h-step", type=float, default=0.2)
     parser.add_argument("--seed", type=int, default=20260529)
+    parser.add_argument("--bootstrap", action="store_true")
+    parser.add_argument("--n-bootstrap", type=int, default=200)
+    parser.add_argument("--n-jobs", type=int, default=1)
     parser.add_argument("--out-prefix", default="results/raw_tether_partition")
     args = parser.parse_args(argv[1:])
 
@@ -351,13 +520,15 @@ def main(argv: list[str]) -> int:
     features: dict[str, RawFeatures] = {}
     curves: dict[str, dict[str, np.ndarray]] = {}
     maxima: dict[str, dict] = {}
+    bootstrap_max: dict[str, dict[str, np.ndarray]] | None = {}
 
     for sys_name, label in SYSTEMS:
         sys_dir = root / "outputs" / sys_name / "s001"
         print(f"[{label}] extracting raw unbound features from {sys_dir.relative_to(root)}", flush=True)
         feat = extract_raw_unbound_features(sys_dir, label)
         features[label] = feat
-        print(f"  unbound samples: R={len(feat.R_end)} L={len(feat.L_end)}", flush=True)
+        print(f"  unbound samples: R={len(feat.R_end)} L={len(feat.L_end)} "
+              f"(per-frame avg: R={len(feat.R_end)/feat.n_frames:.1f} L={len(feat.L_end)/feat.n_frames:.1f})", flush=True)
         print(f"  estimating area curve over {len(h_values)} h values", flush=True)
         curve = estimate_area_curve(feat, h_values, args.sample_pairs, args.bond_samples, rng)
         curves[label] = curve
@@ -372,6 +543,21 @@ def main(argv: list[str]) -> int:
             flush=True,
         )
 
+        if args.bootstrap:
+            print(f"  bootstrap: {args.n_bootstrap} frame-level resamples", flush=True)
+            boot = bootstrap_area_curves(
+                feat, h_values, args.sample_pairs, args.bond_samples,
+                args.n_bootstrap, args.seed, n_jobs=args.n_jobs,
+            )
+            bootstrap_max[label] = boot
+            s = boot["soft_area"]
+            print(f"  soft boot: mean={float(np.mean(s)):.6g} sigma={float(np.std(s)):.6g}", flush=True)
+            hb = boot["hard_area"]
+            print(f"  hard boot: mean={float(np.mean(hb)):.6g} sigma={float(np.std(hb)):.6g}", flush=True)
+
+    if not args.bootstrap:
+        bootstrap_max = None
+
     out_prefix = root / args.out_prefix
     out_prefix.parent.mkdir(parents=True, exist_ok=True)
     out_npz = out_prefix.with_suffix(".npz")
@@ -384,14 +570,28 @@ def main(argv: list[str]) -> int:
         payload[f"{label}__n_R_unbound"] = len(features[label].R_end)
         payload[f"{label}__n_L_unbound"] = len(features[label].L_end)
         payload[f"{label}__n_frames"] = features[label].n_frames
+        if bootstrap_max is not None:
+            for key, arr in bootstrap_max[label].items():
+                payload[f"{label}__boot__{key}"] = arr
     np.savez(out_npz, **payload)
 
     out_md = out_prefix.with_suffix(".md")
-    write_report(out_md, features, curves, maxima, args.sample_pairs, args.bond_samples)
+    write_report(out_md, features, curves, maxima, args.sample_pairs, args.bond_samples, bootstrap_max)
 
     print("\n=== Soft-kernel closure ===")
     for row in pair_rows(maxima, "soft_area"):
         print(f"{row['pair']:11s} pred={row['ddF']:+.3f} target={row['target']:+.2f} gap={row['gap']:+.3f}")
+    if bootstrap_max is not None:
+        print("\n=== Bootstrap closure (mean ± σ) ===")
+        for name, a, b in [
+            ("flex-rigid", "flex", "rigid"),
+            ("semi-rigid", "semi", "rigid"),
+            ("semi-flex", "semi", "flex"),
+        ]:
+            ratios = bootstrap_max[a]["soft_area"] / bootstrap_max[b]["soft_area"]
+            ddF_samples = -np.log(ratios)
+            print(f"{name:11s} pred={float(np.mean(ddF_samples)):+.3f} ± {float(np.std(ddF_samples)):.3f} "
+                  f"target={TARGETS[name]:+.2f}")
     print(f"\nSaved {out_npz.relative_to(root)} and {out_md.relative_to(root)}")
     return 0
 
