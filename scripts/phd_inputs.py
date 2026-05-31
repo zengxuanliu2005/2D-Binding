@@ -68,36 +68,51 @@ def _axis_unit_vector(positions: np.ndarray, kind: str) -> np.ndarray:
     return v / n
 
 
-def load_system(npz_path: Path, label: str, sys_name: str) -> SystemInputs:
-    d = np.load(npz_path)
-    pR = d["positions_R"]
-    pL = d["positions_L"]
-    bR = d["bound_R"]
-    bL = d["bound_L"]
-    n_frames = int(d["n_frames"])
-    n_R = int(d["n_R"])
-    n_L = int(d["n_L"])
+def system_inputs_from_arrays(
+    label: str,
+    sys_name: str,
+    pR: np.ndarray,
+    pL: np.ndarray,
+    bR: np.ndarray,
+    bL: np.ndarray,
+    n_R: int,
+    n_L: int,
+) -> SystemInputs:
+    """Build SystemInputs from already-loaded frame-indexed arrays.
+
+    pR/pL: (n_frames, n_R/L, 13, 3); bR/bL: (n_frames, n_R/L) bool.
+    Used both by load_system (full data) and by bootstrap (resampled frames).
+    """
+    n_frames = int(pR.shape[0])
 
     # End-to-end of free chain (chain[12] - chain[3] is the ecto domain)
     v_R = pR[..., 12, :] - pR[..., 3, :]
     v_L = pL[..., 12, :] - pL[..., 3, :]
     rmag_R = np.linalg.norm(v_R, axis=-1)
     rmag_L = np.linalg.norm(v_L, axis=-1)
-    R_e_free = float(np.mean(np.concatenate([rmag_R[~bR], rmag_L[~bL]])))
+    free_R = rmag_R[~bR]
+    free_L = rmag_L[~bL]
+    if free_R.size + free_L.size == 0:
+        R_e_free = float("nan")
+    else:
+        R_e_free = float(np.mean(np.concatenate([free_R, free_L])))
 
     # D = vertical reach of bound chain (ligand z flipped to share sign with R)
     flipped_R = _flip_ligand_z(pR, "R")  # no-op for R
     flipped_L = _flip_ligand_z(pL, "L")  # flips z
     ext_z_R = flipped_R[..., 12, 2] - flipped_R[..., 3, 2]
     ext_z_L = flipped_L[..., 12, 2] - flipped_L[..., 3, 2]
-    D_bound = float(np.mean(np.concatenate([ext_z_R[bR], ext_z_L[bL]])))
+    bound_R = ext_z_R[bR]
+    bound_L = ext_z_L[bL]
+    if bound_R.size + bound_L.size == 0:
+        D_bound = float("nan")
+    else:
+        D_bound = float(np.mean(np.concatenate([bound_R, bound_L])))
 
     L = R_MAX - D_bound
 
-    # n_b per frame (number of bound R = number of bound L = number of bonds/frame)
     n_b_per_frame = float(bR.sum(axis=1).mean())
 
-    # axis populations
     aR = _axis_unit_vector(pR, "R")
     aL = _axis_unit_vector(pL, "L")
     return SystemInputs(
@@ -117,12 +132,47 @@ def load_system(npz_path: Path, label: str, sys_name: str) -> SystemInputs:
     )
 
 
+def load_raw(npz_path: Path) -> dict:
+    """Load raw chain_coords arrays without computing any derived quantities."""
+    d = np.load(npz_path)
+    return {
+        "pR": d["positions_R"],
+        "pL": d["positions_L"],
+        "bR": d["bound_R"],
+        "bL": d["bound_L"],
+        "n_R": int(d["n_R"]),
+        "n_L": int(d["n_L"]),
+    }
+
+
+def load_system(npz_path: Path, label: str, sys_name: str) -> SystemInputs:
+    raw = load_raw(npz_path)
+    return system_inputs_from_arrays(
+        label, sys_name,
+        raw["pR"], raw["pL"], raw["bR"], raw["bL"],
+        raw["n_R"], raw["n_L"],
+    )
+
+
 def load_all() -> dict[str, SystemInputs]:
     root = Path(__file__).resolve().parent.parent
     out = {}
     for sys_name, label in SYSTEMS:
         npz = root / "results" / "chain_coords" / sys_name / "chain_coords.npz"
         out[label] = load_system(npz, label, sys_name)
+    return out
+
+
+def load_all_raw() -> dict[str, tuple[dict, str]]:
+    """Load raw arrays for all systems, keyed by label.
+
+    Returns: {label: (raw_arrays_dict, sys_name)}
+    """
+    root = Path(__file__).resolve().parent.parent
+    out = {}
+    for sys_name, label in SYSTEMS:
+        npz = root / "results" / "chain_coords" / sys_name / "chain_coords.npz"
+        out[label] = (load_raw(npz), sys_name)
     return out
 
 

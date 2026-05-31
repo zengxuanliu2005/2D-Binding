@@ -1,13 +1,19 @@
-"""Q2: Reconcile ΔΔF gaps across four independent methods.
+"""Q2: Reconcile ΔΔF gaps across five independent methods.
 
 Methods:
   1. Target — Hu master curve K2D,max ratios (PhD PPT)
-  2. PhD PPT s25 — trans + rot + conf-WLC decomposition
+  2. PhD PPT s25 — trans + rot + conf-WLC (her published values)
   3. phd_closure — S1-S23 four-term (trans + conf + end-volume + rot)
-  4. Raw partition — polymer-tether partition function (PR #1 bootstrap)
+  4. Raw partition — polymer-tether partition function (bootstrap)
+  5. s25 reimpl — our trans + rot + WLC built from chain_coords data,
+      L_c = 12 nm (model contour), l_p from xi_rl_candidates.LP_PHD
 
 Tests whether residual gaps are statistical or systematic, constructs
-a consensus estimator via inverse-variance weighted average.
+a consensus estimator via inverse-variance weighted average. The 5th
+method exposes the sensitivity of the s25 framework to L_c choice —
+our principled L_c = 12 nm gives larger F_conf for flex than PhD's
+implicit (system-specific) L_c, so the reimpl undershoots semi−rigid
+and overshoots flex−rigid relative to her published numbers.
 """
 from __future__ import annotations
 
@@ -46,6 +52,22 @@ RAW_PARTITION = {
     "semi-flex": (-0.915, 0.071),
 }
 
+# phd_closure S1-S23 with frame-level bootstrap (200 resamples): mean ± σ
+# (point estimates from PR #5; σ from scripts/phd_closure.py --bootstrap)
+PHD_CLOSURE_BOOT = {
+    "flex-rigid": (3.988, 0.031),
+    "semi-rigid": (2.707, 0.031),
+    "semi-flex": (-1.281, 0.030),
+}
+
+# s25 reimplemented on chain_coords data (L_c = 12 nm, lp = LP_PHD):
+# trans + rot + Marko–Siggia WLC integrated stretch. Bootstrap 200 resamples.
+S25_REIMPL = {
+    "flex-rigid": (5.231, 0.043),
+    "semi-rigid": (2.053, 0.031),
+    "semi-flex": (-3.178, 0.044),
+}
+
 # Target σ from PhD's curve_fit covariance on K2D,max
 # K2D,max: rigid 12613.6±96.5, semi 876.6±15.4, flex 359.5±8.8
 SIGMA_LN_K2D = {"rigid": 96.5/12613.6, "semi": 15.4/876.6, "flex": 8.8/359.5}
@@ -73,6 +95,7 @@ def main():
         "PhD PPT s25": PHD_PPT,
         "phd_closure (S1-S23)": PHD_CLOSURE,
         "Raw partition": {k: v[0] for k, v in RAW_PARTITION.items()},
+        "s25 reimpl": {k: v[0] for k, v in S25_REIMPL.items()},
     }
 
     print("\n--- Method ΔΔF values ---")
@@ -139,22 +162,26 @@ def main():
     # --- Figure ---
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5.5), constrained_layout=True)
 
-    # Panel (a): Method comparison bar chart
+    # Panel (a): Method comparison bar chart (5 methods)
     x = np.arange(len(PAIR_LABELS))
-    width = 0.2
-    offsets = [-1.5*width, -0.5*width, 0.5*width, 1.5*width]
-    colors = ["#333333", "#1f77b4", "#ff7f0e", "#2ca02c"]
+    n_methods = len(methods)
+    width = 0.16
+    offsets = [(i - (n_methods - 1) / 2) * width for i in range(n_methods)]
+    colors = ["#333333", "#1f77b4", "#ff7f0e", "#2ca02c", "#9467bd"]
 
     for i, (name, vals) in enumerate(methods.items()):
         y_vals = [vals[k] for k in ["flex-rigid", "semi-rigid", "semi-flex"]]
-        bars = ax1.bar(x + offsets[i], y_vals, width, label=name,
-                       color=colors[i], alpha=0.8, edgecolor="k", linewidth=0.5)
+        ax1.bar(x + offsets[i], y_vals, width, label=name,
+                color=colors[i], alpha=0.8, edgecolor="k", linewidth=0.5)
 
-    # Add error bars for raw partition
-    rp_vals = [RAW_PARTITION[k][0] for k in ["flex-rigid", "semi-rigid", "semi-flex"]]
-    rp_errs = [RAW_PARTITION[k][1] for k in ["flex-rigid", "semi-rigid", "semi-flex"]]
-    ax1.errorbar(x + offsets[3], rp_vals, yerr=rp_errs, fmt="none",
-                 ecolor="k", capsize=4, linewidth=1.5)
+    # Error bars on the methods that have bootstrap σ
+    raw_idx = list(methods.keys()).index("Raw partition")
+    s25r_idx = list(methods.keys()).index("s25 reimpl")
+    for src, idx in [(RAW_PARTITION, raw_idx), (S25_REIMPL, s25r_idx)]:
+        vals = [src[k][0] for k in ["flex-rigid", "semi-rigid", "semi-flex"]]
+        errs = [src[k][1] for k in ["flex-rigid", "semi-rigid", "semi-flex"]]
+        ax1.errorbar(x + offsets[idx], vals, yerr=errs, fmt="none",
+                     ecolor="k", capsize=3, linewidth=1.2)
 
     ax1.set_xticks(x)
     ax1.set_xticklabels(PAIR_LABELS, fontsize=11)
@@ -163,28 +190,23 @@ def main():
     ax1.legend(fontsize=8, loc="upper left")
     ax1.axhline(y=0, color="k", linewidth=0.5)
 
-    # Panel (b): Gap from target with error bands
-    methods_wo_target = ["PhD s25", "phd_closure", "Raw partition"]
-    gap_vals = []
-    gap_errs = []
-    for i, (name, vals) in enumerate([("PhD s25", PHD_PPT), ("phd_closure", PHD_CLOSURE),
-                                       ("Raw partition", {k: v[0] for k, v in RAW_PARTITION.items()})]):
-        gaps = [vals[k] - TARGET[k] for k in ["flex-rigid", "semi-rigid", "semi-flex"]]
-        gap_vals.append(gaps)
-        if name == "Raw partition":
-            gap_errs.append([RAW_PARTITION[k][1] for k in ["flex-rigid", "semi-rigid", "semi-flex"]])
-        else:
-            gap_errs.append([0.15, 0.15, 0.15])  # estimated
-
+    # Panel (b): Gap from target with error bands (4 non-target methods)
+    panel_b_methods = [
+        ("PhD PPT s25",  PHD_PPT,                                                  [0.15]*3,                                                                  "#1f77b4"),
+        ("phd_closure",  PHD_CLOSURE,                                              [PHD_CLOSURE_BOOT[k][1] for k in ["flex-rigid","semi-rigid","semi-flex"]],"#ff7f0e"),
+        ("Raw partition",{k: v[0] for k, v in RAW_PARTITION.items()},              [RAW_PARTITION[k][1] for k in ["flex-rigid","semi-rigid","semi-flex"]],   "#2ca02c"),
+        ("s25 reimpl",   {k: v[0] for k, v in S25_REIMPL.items()},                 [S25_REIMPL[k][1] for k in ["flex-rigid","semi-rigid","semi-flex"]],      "#9467bd"),
+    ]
     x2 = np.arange(len(PAIR_LABELS))
-    width2 = 0.25
-    for i, (name, gaps, errs, c) in enumerate(zip(
-            ["PhD PPT s25", "phd_closure", "Raw partition"],
-            gap_vals, gap_errs, ["#1f77b4", "#ff7f0e", "#2ca02c"])):
-        ax2.bar(x2 + (i-1)*width2, gaps, width2, label=name,
+    n_b = len(panel_b_methods)
+    width2 = 0.18
+    offsets_b = [(i - (n_b - 1) / 2) * width2 for i in range(n_b)]
+    for i, (name, vals, errs, c) in enumerate(panel_b_methods):
+        gaps = [vals[k] - TARGET[k] for k in ["flex-rigid", "semi-rigid", "semi-flex"]]
+        ax2.bar(x2 + offsets_b[i], gaps, width2, label=name,
                 color=c, alpha=0.8, edgecolor="k", linewidth=0.5)
-        ax2.errorbar(x2 + (i-1)*width2, gaps, yerr=errs, fmt="none",
-                     ecolor="k", capsize=4, linewidth=1)
+        ax2.errorbar(x2 + offsets_b[i], gaps, yerr=errs, fmt="none",
+                     ecolor="k", capsize=3, linewidth=1)
 
     ax2.axhline(y=0, color="k", linewidth=0.8, linestyle="--")
     ax2.set_xticks(x2)
@@ -193,7 +215,7 @@ def main():
     ax2.set_title("(b) Residual from Hu-curve target", fontsize=12)
     ax2.legend(fontsize=8)
 
-    fig.suptitle("Method reconciliation — four independent ΔΔF estimators",
+    fig.suptitle("Method reconciliation — five independent ΔΔF estimators",
                  fontsize=14, y=1.02)
 
     out_dir = ROOT / "results" / "figures"
@@ -213,13 +235,19 @@ def main():
         fp.write("## Methods\n\n")
         fp.write("1. **Target (Hu fit):** 2-step protocol on (ξ⊥, K2D) slab data; "
                  "K2D,max = 12705 / 875 / 362 nm² → ΔΔF = 3.56 / 2.68 / −0.90 kBT.\n")
-        fp.write("2. **PhD PPT s25:** trans + rot + conf (WLC Marko-Siggia); "
-                 "lp = 84.6 / 8.18 / 1.14 nm, k_a from anchor angle.\n")
+        fp.write("2. **PhD PPT s25:** trans + rot + conf (WLC Marko-Siggia), "
+                 "as published on PPT slide 25 with her implicit L_c choice.\n")
         fp.write("3. **phd_closure (S1-S23):** trans + conformal + end-volume + rot; "
-                 "evaluated on chain_coords.npz.\n")
+                 "evaluated on chain_coords.npz. Bootstrap σ from "
+                 "`phd_closure.py --bootstrap`.\n")
         fp.write("4. **Raw partition:** polymer-tether partition function with "
                  "soft binding kernel; bootstrap n=200 frames. "
-                 "Ab initio — no fitting to (ξ⊥, K2D) data.\n\n")
+                 "Ab initio — no fitting to (ξ⊥, K2D) data.\n")
+        fp.write("5. **s25 reimpl:** reimplementation of method 2 on our own "
+                 "chain_coords data with the standard Marko–Siggia integrated "
+                 "stretching free energy, L_c = 12 nm (model contour, 12 protein "
+                 "bonds × 1.0 σ), l_p from `xi_rl_candidates.LP_PHD`. "
+                 "Bootstrap σ from `phd_closure_s25.py --bootstrap`.\n\n")
 
         fp.write("## ΔΔF comparison (kBT)\n\n")
         fp.write("| Method | flex−rigid | semi−rigid | semi−flex |\n")
@@ -231,7 +259,7 @@ def main():
         fp.write("\n## Residual gaps from target\n\n")
         fp.write("| Method | flex−rigid | semi−rigid | semi−flex | max gap |\n")
         fp.write("|---|---:|---:|---:|---:|\n")
-        for name in ["PhD PPT s25", "phd_closure (S1-S23)", "Raw partition"]:
+        for name in ["PhD PPT s25", "phd_closure (S1-S23)", "Raw partition", "s25 reimpl"]:
             vals = methods[name]
             gaps = [abs(vals[k] - TARGET[k]) for k in ["flex-rigid", "semi-rigid", "semi-flex"]]
             fp.write(f"| {name} | {gaps[0]:.3f} | {gaps[1]:.3f} | {gaps[2]:.3f} | {max(gaps):.3f} |\n")
@@ -286,7 +314,17 @@ def main():
                  "max gap between three of four methods is smaller than the "
                  "combined method σ (~0.2 kBT) PLUS the target systematic σ "
                  "(~0.1–0.2 kBT). All methods independently confirm the "
-                 "flexibility-dependent K2D ordering with correct signs.\n")
+                 "flexibility-dependent K2D ordering with correct signs.\n\n")
+        fp.write("6. **s25 reimpl exposes WLC L_c sensitivity.** With L_c = 12 nm "
+                 "(principled model contour) and our measured (D, lp), the "
+                 "Marko–Siggia integrated stretch gives F_conf,flex ≈ 3.4 kBT "
+                 "vs PPT s25's implicit ≈ 1.9 kBT. The 1.5 kBT discrepancy "
+                 "shows the s25 framework is not parameter-free — it requires "
+                 "an effective L_c calibrated to each system's free Re. The "
+                 "principled L_c does NOT reproduce PPT s25 numbers; conversely "
+                 "PPT s25 numbers cannot be derived from first-principles WLC "
+                 "without ad-hoc L_c choice. This is a methodological caveat "
+                 "for any future analytic K2D theory built on WLC stretching.\n")
 
     print(f"Saved {out_md.relative_to(ROOT)}")
 

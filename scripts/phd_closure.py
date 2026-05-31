@@ -17,17 +17,24 @@ numbers on page S3):
     F_rot_pair  = F_rot  (S22-S23 ratio)
 """
 from __future__ import annotations
+import argparse
 import sys
+from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).parent))
-from phd_inputs import load_all, AREA, B, R_MAX  # noqa: E402
+from phd_inputs import (  # noqa: E402
+    load_all, load_all_raw, system_inputs_from_arrays, AREA, B, R_MAX,
+)
 from phd_formula import F_trans, F_conf, F_bond, F_rot  # noqa: E402
 
 TARGETS = {"flex−rigid": +3.56, "semi−rigid": +2.68, "semi−flex": -0.90}
 LABELS = ("rigid", "semi", "flex")
+PAIR_SPECS = [("flex−rigid", "flex", "rigid"),
+              ("semi−rigid", "semi", "rigid"),
+              ("semi−flex",  "semi", "flex")]
 
 
 def regime_for(label: str) -> str:
@@ -77,10 +84,7 @@ def per_system_terms(inputs, n_bins_marg: int = 16,
 def cross_pair_table(per_sys: dict) -> list[dict]:
     """Compute ΔΔF for each pair comparison and per term."""
     rows = []
-    pair_specs = [("flex−rigid", "flex", "rigid"),
-                  ("semi−rigid", "semi", "rigid"),
-                  ("semi−flex",  "semi", "flex")]
-    for name, a, b in pair_specs:
+    for name, a, b in PAIR_SPECS:
         sa, sb = per_sys[a], per_sys[b]
         ddF_t    = sa["F_trans_pair"] - sb["F_trans_pair"]
         ddF_c    = sa["F_conf_pair"]  - sb["F_conf_pair"]
@@ -102,7 +106,89 @@ def cross_pair_table(per_sys: dict) -> list[dict]:
     return rows
 
 
+def _resample_inputs(raw_by_label: dict, seed: int) -> dict:
+    """Build per-label SystemInputs by resampling frames with replacement.
+
+    Each system's frames are resampled independently (since the three MD
+    trajectories are independent).
+    """
+    rng = np.random.default_rng(seed)
+    out = {}
+    for label, (raw, sys_name) in raw_by_label.items():
+        n_frames = raw["pR"].shape[0]
+        idx = rng.integers(0, n_frames, size=n_frames)
+        out[label] = system_inputs_from_arrays(
+            label, sys_name,
+            raw["pR"][idx], raw["pL"][idx],
+            raw["bR"][idx], raw["bL"][idx],
+            raw["n_R"], raw["n_L"],
+        )
+    return out
+
+
+def _bootstrap_one(args):
+    raw_by_label, seed, n_bins_marg, n_bins_joint = args
+    inputs = _resample_inputs(raw_by_label, seed)
+    per_sys = per_system_terms(inputs, n_bins_marg=n_bins_marg,
+                                n_bins_joint=n_bins_joint)
+    rows = cross_pair_table(per_sys)
+    return rows, {l: {k: float(v) for k, v in per_sys[l].items()
+                       if isinstance(v, (int, float))} for l in LABELS}
+
+
+def bootstrap_closure(raw_by_label: dict, n_bootstrap: int, seed: int,
+                       n_jobs: int = 1, n_bins_marg: int = 16,
+                       n_bins_joint: int = 6) -> dict:
+    """Run frame-level bootstrap and return per-pair, per-term ΔΔF samples.
+
+    Returns dict with arrays of shape (n_bootstrap,) for each
+    (pair, term) combination, plus per-system per-term arrays.
+    """
+    tasks = [(raw_by_label, seed + ib, n_bins_marg, n_bins_joint)
+             for ib in range(n_bootstrap)]
+
+    pair_terms = ("ddF_t", "ddF_c", "ddF_bond", "ddF_rot", "ddF_sum")
+    sys_terms = ("F_trans_pair", "F_conf_pair", "F_bond_pair", "F_rot_pair")
+    pair_acc = {name: {term: np.zeros(n_bootstrap) for term in pair_terms}
+                for name, _, _ in PAIR_SPECS}
+    sys_acc = {label: {term: np.zeros(n_bootstrap) for term in sys_terms}
+               for label in LABELS}
+
+    def _store(ib, rows, sys_dict):
+        for r in rows:
+            for term in pair_terms:
+                pair_acc[r["pair"]][term][ib] = r[term]
+        for label in LABELS:
+            for term in sys_terms:
+                sys_acc[label][term][ib] = sys_dict[label][term]
+
+    if n_jobs <= 1:
+        for ib in range(n_bootstrap):
+            if ib % max(1, n_bootstrap // 20) == 0:
+                print(f"    bootstrap {ib}/{n_bootstrap}...", flush=True)
+            rows, sys_dict = _bootstrap_one(tasks[ib])
+            _store(ib, rows, sys_dict)
+    else:
+        import multiprocessing as mp
+        mp.set_start_method("fork", force=True)
+        with ProcessPoolExecutor(max_workers=n_jobs) as ex:
+            for ib, (rows, sys_dict) in enumerate(ex.map(_bootstrap_one, tasks)):
+                if ib % max(1, n_bootstrap // 20) == 0:
+                    print(f"    bootstrap {ib}/{n_bootstrap}...", flush=True)
+                _store(ib, rows, sys_dict)
+    print(f"    bootstrap {n_bootstrap}/{n_bootstrap} done.", flush=True)
+    return {"pair": pair_acc, "per_system": sys_acc}
+
+
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--bootstrap", action="store_true",
+                        help="Run frame-level bootstrap and report per-term σ.")
+    parser.add_argument("--n-bootstrap", type=int, default=200)
+    parser.add_argument("--n-jobs", type=int, default=1)
+    parser.add_argument("--seed", type=int, default=20260601)
+    args = parser.parse_args()
+
     inputs = load_all()
     per_sys = per_system_terms(inputs)
 
@@ -131,6 +217,29 @@ def main():
               f"{r['ddF_sum']:+9.3f}  {r['target']:+7.2f}  "
               f"{r['gap']:+7.3f}  {r['closed']:+6.0f}%")
 
+    # ---- bootstrap ----
+    boot = None
+    if args.bootstrap:
+        print(f"\n=== Bootstrap: {args.n_bootstrap} frame-level resamples "
+              f"(n_jobs={args.n_jobs}) ===")
+        raw_by_label = load_all_raw()
+        boot = bootstrap_closure(
+            raw_by_label, args.n_bootstrap, args.seed, n_jobs=args.n_jobs,
+        )
+        print("\n=== Per-pair ΔΔF (mean ± σ) ===\n")
+        print(f"{'pair':12s}  {'ΔΔF_t':>14s}  {'ΔΔF_c':>14s}  "
+              f"{'ΔΔF_bond':>14s}  {'ΔΔF_rot':>14s}  {'ΔΔF_sum':>14s}  "
+              f"{'target':>7s}")
+        for name, _, _ in PAIR_SPECS:
+            pa = boot["pair"][name]
+            cells = []
+            for term in ("ddF_t", "ddF_c", "ddF_bond", "ddF_rot", "ddF_sum"):
+                m = float(np.mean(pa[term]))
+                s = float(np.std(pa[term]))
+                cells.append(f"{m:+7.3f}±{s:5.3f}")
+            print(f"{name:12s}  {cells[0]}  {cells[1]}  {cells[2]}  "
+                  f"{cells[3]}  {cells[4]}  {TARGETS[name]:+7.2f}")
+
     # ---- save npz + markdown ----
     root = Path(__file__).resolve().parent.parent
     out_npz = root / "results" / "phd_closure.npz"
@@ -150,6 +259,14 @@ def main():
     payload["pair_ddF_rot"]  = np.array([r["ddF_rot"]  for r in rows])
     payload["pair_ddF_sum"]  = np.array([r["ddF_sum"]  for r in rows])
     payload["pair_target"]   = np.array([r["target"]   for r in rows])
+    if boot is not None:
+        for name, _, _ in PAIR_SPECS:
+            safe = name.replace("−", "-")
+            for term, arr in boot["pair"][name].items():
+                payload[f"boot__{safe}__{term}"] = arr
+        for label in LABELS:
+            for term, arr in boot["per_system"][label].items():
+                payload[f"boot__{label}__{term}"] = arr
     np.savez(out_npz, **payload)
     print(f"\nSaved {out_npz.relative_to(root)}.")
 
@@ -184,6 +301,34 @@ def main():
                      f"| {r['ddF_bond']:+.3f} | {r['ddF_rot']:+.3f} | "
                      f"**{r['ddF_sum']:+.3f}** | **{r['target']:+.2f}** | "
                      f"{r['gap']:+.3f} | {r['closed']:+.0f}% |\n")
+
+        if boot is not None:
+            n_boot = next(iter(boot["pair"].values()))["ddF_sum"].size
+            fp.write(f"\n## Bootstrap uncertainty (n = {n_boot} frame-level resamples)\n\n")
+            fp.write("Each pair-term value is point ± σ from frame-level bootstrap "
+                     "(frames resampled independently per system).\n\n")
+            fp.write("| pair | ΔΔF_t | ΔΔF_c | ΔΔF_bond | ΔΔF_rot | ΔΔF_sum | target |\n"
+                     "|---|---|---|---|---|---|---|\n")
+            for name, _, _ in PAIR_SPECS:
+                pa = boot["pair"][name]
+                cells = []
+                for term in ("ddF_t", "ddF_c", "ddF_bond", "ddF_rot", "ddF_sum"):
+                    m = float(np.mean(pa[term]))
+                    s = float(np.std(pa[term]))
+                    cells.append(f"{m:+.3f} ± {s:.3f}")
+                fp.write(f"| {name} | {cells[0]} | {cells[1]} | {cells[2]} | "
+                         f"{cells[3]} | **{cells[4]}** | {TARGETS[name]:+.2f} |\n")
+
+            fp.write("\n### Per-system per-term σ (k_B T)\n\n")
+            fp.write("| label | F_t σ | F_c σ | F_bond σ | F_rot σ |\n"
+                     "|---|---|---|---|---|\n")
+            for label in LABELS:
+                row = boot["per_system"][label]
+                fp.write(f"| {label} | "
+                         f"{float(np.std(row['F_trans_pair'])):.4f} | "
+                         f"{float(np.std(row['F_conf_pair'])):.4f} | "
+                         f"{float(np.std(row['F_bond_pair'])):.4f} | "
+                         f"{float(np.std(row['F_rot_pair'])):.4f} |\n")
         fp.write("\n## Notes\n\n")
         fp.write("- F_t is per-protein from S1; pair contribution = 2 · F_t.\n")
         fp.write("- F_c is per chain from S4 with the 1.5 prefactor; pair = 2 · F_c.\n")

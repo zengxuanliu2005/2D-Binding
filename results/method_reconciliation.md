@@ -5,9 +5,10 @@ Four independent methods estimate the K2D,max free-energy difference across flex
 ## Methods
 
 1. **Target (Hu fit):** 2-step protocol on (ξ⊥, K2D) slab data; K2D,max = 12705 / 875 / 362 nm² → ΔΔF = 3.56 / 2.68 / −0.90 kBT.
-2. **PhD PPT s25:** trans + rot + conf (WLC Marko-Siggia); lp = 84.6 / 8.18 / 1.14 nm, k_a from anchor angle.
-3. **phd_closure (S1-S23):** trans + conformal + end-volume + rot; evaluated on chain_coords.npz.
+2. **PhD PPT s25:** trans + rot + conf (WLC Marko-Siggia), as published on PPT slide 25 with her implicit L_c choice.
+3. **phd_closure (S1-S23):** trans + conformal + end-volume + rot; evaluated on chain_coords.npz. Bootstrap σ from `phd_closure.py --bootstrap`.
 4. **Raw partition:** polymer-tether partition function with soft binding kernel; bootstrap n=200 frames. Ab initio — no fitting to (ξ⊥, K2D) data.
+5. **s25 reimpl:** reimplementation of method 2 on our own chain_coords data with the standard Marko–Siggia integrated stretching free energy, L_c = 12 nm (model contour, 12 protein bonds × 1.0 σ), l_p from `xi_rl_candidates.LP_PHD`. Bootstrap σ from `phd_closure_s25.py --bootstrap`.
 
 ## ΔΔF comparison (kBT)
 
@@ -17,6 +18,7 @@ Four independent methods estimate the K2D,max free-energy difference across flex
 | PhD PPT s25 | +3.640 | +2.470 | -1.180 |
 | phd_closure (S1-S23) | +3.960 | +2.690 | -1.270 |
 | Raw partition | +3.324 | +2.409 | -0.915 |
+| s25 reimpl | +5.231 | +2.053 | -3.178 |
 
 ## Residual gaps from target
 
@@ -25,6 +27,7 @@ Four independent methods estimate the K2D,max free-energy difference across flex
 | PhD PPT s25 | 0.080 | 0.210 | 0.280 | 0.280 |
 | phd_closure (S1-S23) | 0.400 | 0.010 | 0.370 | 0.400 |
 | Raw partition | 0.236 | 0.271 | 0.015 | 0.271 |
+| s25 reimpl | 1.671 | 0.627 | 2.278 | 2.278 |
 
 ## Statistical significance
 
@@ -59,3 +62,5 @@ Combines target + PhD PPT s25 + raw partition (omits phd_closure due to known en
 4. **The consensus estimator is within 0.02 kBT of the target for semi−rigid** — the cleanest comparison because both K100 and K10 are directly matched between our systems and PhD's data.
 
 5. **No fundamental disagreement between methods.** The 0.3 kBT max gap between three of four methods is smaller than the combined method σ (~0.2 kBT) PLUS the target systematic σ (~0.1–0.2 kBT). All methods independently confirm the flexibility-dependent K2D ordering with correct signs.
+
+6. **s25 reimpl exposes WLC L_c sensitivity.** With L_c = 12 nm (principled model contour) and our measured (D, lp), the Marko–Siggia integrated stretch gives F_conf,flex ≈ 3.4 kBT vs PPT s25's implicit ≈ 1.9 kBT. The 1.5 kBT discrepancy shows the s25 framework is not parameter-free — it requires an effective L_c calibrated to each system's free Re. The principled L_c does NOT reproduce PPT s25 numbers; conversely PPT s25 numbers cannot be derived from first-principles WLC without ad-hoc L_c choice. This is a methodological caveat for any future analytic K2D theory built on WLC stretching.

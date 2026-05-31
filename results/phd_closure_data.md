@@ -28,6 +28,24 @@ Each pair value is per R-L pair, in k_B T.
 | semi−rigid | +0.000 | -0.066 | +1.395 | +1.359 | **+2.688** | **+2.68** | +0.008 | +100% |
 | semi−flex | -0.383 | -0.394 | -0.289 | -0.202 | **-1.268** | **-0.90** | -0.368 | +141% |
 
+## Bootstrap uncertainty (n = 200 frame-level resamples)
+
+Each pair-term value is point ± σ from frame-level bootstrap (frames resampled independently per system).
+
+| pair | ΔΔF_t | ΔΔF_c | ΔΔF_bond | ΔΔF_rot | ΔΔF_sum | target |
+|---|---|---|---|---|---|---|
+| flex−rigid | +0.383 ± 0.000 | +0.329 ± 0.012 | +1.683 ± 0.004 | +1.592 ± 0.029 | **+3.988 ± 0.031** | +3.56 |
+| semi−rigid | +0.000 ± 0.000 | -0.065 ± 0.007 | +1.395 ± 0.004 | +1.378 ± 0.030 | **+2.707 ± 0.031** | +2.68 |
+| semi−flex | -0.383 ± 0.000 | -0.395 ± 0.015 | -0.288 ± 0.006 | -0.215 ± 0.026 | **-1.281 ± 0.030** | -0.90 |
+
+### Per-system per-term σ (k_B T)
+
+| label | F_t σ | F_c σ | F_bond σ | F_rot σ |
+|---|---|---|---|---|
+| rigid | 0.0000 | 0.0014 | 0.0000 | 0.0230 |
+| semi | 0.0000 | 0.0064 | 0.0045 | 0.0211 |
+| flex | 0.0000 | 0.0121 | 0.0040 | 0.0147 |
+
 ## Notes
 
 - F_t is per-protein from S1; pair contribution = 2 · F_t.
