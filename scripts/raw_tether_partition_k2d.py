@@ -357,7 +357,7 @@ def bootstrap_area_curves(
     return {"soft_area": max_soft, "hard_area": max_hard, "z_only_area": max_zonly}
 
 
-def pair_rows(maxima: dict[str, dict], key: str) -> list[dict]:
+def pair_rows(maxima: dict[str, dict], key: str, only_present: bool = False) -> list[dict]:
     specs = [
         ("flex-rigid", "flex", "rigid"),
         ("semi-rigid", "semi", "rigid"),
@@ -365,6 +365,8 @@ def pair_rows(maxima: dict[str, dict], key: str) -> list[dict]:
     ]
     rows = []
     for name, a, b in specs:
+        if only_present and (a not in maxima or b not in maxima):
+            continue
         ka = maxima[a][key]
         kb = maxima[b][key]
         ddF = -math.log(ka / kb)
@@ -404,7 +406,7 @@ def write_report(
         fp.write("## Raw feature inventory\n\n")
         fp.write("| label | system | frames | unbound R samples | unbound L samples |\n")
         fp.write("|---|---|---:|---:|---:|\n")
-        for label in ("rigid", "semi", "flex"):
+        for label in [l for l in ("rigid", "semi", "flex") if l in features]:
             f = features[label]
             fp.write(f"| {label} | `{f.sys_name}` | {f.n_frames} | "
                      f"{len(f.R_end)} | {len(f.L_end)} |\n")
@@ -414,7 +416,7 @@ def write_report(
             fp.write("| label | h*_soft (sigma) | max soft area | h*_hard (sigma) | "
                      "max hard area | h*_zonly (sigma) | max z-only area |\n")
             fp.write("|---|---:|---:|---:|---:|---:|---:|\n")
-            for label in ("rigid", "semi", "flex"):
+            for label in [l for l in ("rigid", "semi", "flex") if l in features]:
                 m = maxima[label]
                 fp.write(f"| {label} | {m['soft_h']:.2f} | {m['soft_area']:.6g} | "
                          f"{m['hard_h']:.2f} | {m['hard_area']:.6g} | "
@@ -423,7 +425,7 @@ def write_report(
             fp.write("\n## Bootstrap statistics (point estimate ± σ over frames)\n\n")
             fp.write("| label | soft area (point ± σ) | hard area (point ± σ) | z-only area (point ± σ) |\n")
             fp.write("|---|---|---|---|\n")
-            for label in ("rigid", "semi", "flex"):
+            for label in [l for l in ("rigid", "semi", "flex") if l in features]:
                 s_mean = np.mean(bootstrap_max[label]["soft_area"])
                 s_std = np.std(bootstrap_max[label]["soft_area"])
                 h_mean = np.mean(bootstrap_max[label]["hard_area"])
@@ -437,7 +439,7 @@ def write_report(
             fp.write("| label | h*_soft (sigma) | max soft area | h*_hard (sigma) | "
                      "max hard area | h*_zonly (sigma) | max z-only area |\n")
             fp.write("|---|---:|---:|---:|---:|---:|---:|\n")
-            for label in ("rigid", "semi", "flex"):
+            for label in [l for l in ("rigid", "semi", "flex") if l in features]:
                 m = maxima[label]
                 fp.write(f"| {label} | {m['soft_h']:.2f} | {m['soft_area']:.6g} | "
                          f"{m['hard_h']:.2f} | {m['hard_area']:.6g} | "
@@ -450,11 +452,13 @@ def write_report(
             if bootstrap_max is not None and key != "z_only_area":
                 fp.write("| pair | predicted (point ± σ) | target | gap | closed |\n")
                 fp.write("|---|---:|---:|---:|---:|\n")
-                for name, a, b in [
+                pair_specs = [
                     ("flex-rigid", "flex", "rigid"),
                     ("semi-rigid", "semi", "rigid"),
                     ("semi-flex", "semi", "flex"),
-                ]:
+                ]
+                for name, a, b in [(n, x, y) for (n, x, y) in pair_specs
+                                    if x in bootstrap_max and y in bootstrap_max]:
                     boot_a = bootstrap_max[a][key]
                     boot_b = bootstrap_max[b][key]
                     ratios = boot_a / boot_b
@@ -469,7 +473,7 @@ def write_report(
             else:
                 fp.write("| pair | predicted | target | gap | closed |\n")
                 fp.write("|---|---:|---:|---:|---:|\n")
-                for row in pair_rows(maxima, key):
+                for row in pair_rows(maxima, key, only_present=True):
                     fp.write(f"| {row['pair']} | {row['ddF']:+.3f} | "
                              f"{row['target']:+.2f} | {row['gap']:+.3f} | "
                              f"{row['closed']:+.0f}% |\n")
@@ -485,7 +489,7 @@ def write_report(
         fp.write("- This is an s001-only raw-data prototype. It is intended to test the "
                  "polymer-tether partition-function route, not yet as a final estimator.\n")
         if bootstrap_max is not None:
-            n_boot = len(bootstrap_max["rigid"]["soft_area"])
+            n_boot = len(next(iter(bootstrap_max.values()))["soft_area"])
             fp.write(f"- Bootstrap: `n={n_boot}` frame-level resamples (with replacement). "
                      "ddF σ propagated from bootstrap ratios via `std(-ln(ratio))`.\n")
 
@@ -494,7 +498,7 @@ def write_report(
         fp.write("conda activate phys\n")
         fp.write("python scripts/raw_tether_partition_k2d.py")
         if bootstrap_max is not None:
-            n_boot = len(bootstrap_max["rigid"]["soft_area"])
+            n_boot = len(next(iter(bootstrap_max.values()))["soft_area"])
             fp.write(f" --bootstrap --n-bootstrap {n_boot}")
         fp.write("\n```\n")
 
@@ -511,18 +515,32 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--n-bootstrap", type=int, default=200)
     parser.add_argument("--n-jobs", type=int, default=1)
     parser.add_argument("--out-prefix", default="results/raw_tether_partition")
+    parser.add_argument(
+        "--systems",
+        default="all",
+        help="Comma-separated subset of labels to run (default: all). E.g. 'rigid' or 'rigid,semi'.",
+    )
     args = parser.parse_args(argv[1:])
 
     root = Path(__file__).resolve().parent.parent
     rng = np.random.default_rng(args.seed)
     h_values = np.arange(args.h_min, args.h_max + 0.5 * args.h_step, args.h_step)
 
+    if args.systems.strip().lower() == "all":
+        active_systems = list(SYSTEMS)
+    else:
+        wanted = {s.strip() for s in args.systems.split(",")}
+        active_systems = [(s, l) for (s, l) in SYSTEMS if l in wanted]
+        if not active_systems:
+            raise SystemExit(f"--systems={args.systems} matched none of {[l for _, l in SYSTEMS]}")
+    active_labels = [l for _, l in active_systems]
+
     features: dict[str, RawFeatures] = {}
     curves: dict[str, dict[str, np.ndarray]] = {}
     maxima: dict[str, dict] = {}
     bootstrap_max: dict[str, dict[str, np.ndarray]] | None = {}
 
-    for sys_name, label in SYSTEMS:
+    for sys_name, label in active_systems:
         sys_dir = root / "outputs" / sys_name / "s001"
         print(f"[{label}] extracting raw unbound features from {sys_dir.relative_to(root)}", flush=True)
         feat = extract_raw_unbound_features(sys_dir, label)
@@ -562,7 +580,7 @@ def main(argv: list[str]) -> int:
     out_prefix.parent.mkdir(parents=True, exist_ok=True)
     out_npz = out_prefix.with_suffix(".npz")
     payload = {"h": h_values}
-    for label in ("rigid", "semi", "flex"):
+    for label in active_labels:
         for key, arr in curves[label].items():
             payload[f"{label}__{key}"] = arr
         for key, value in maxima[label].items():
@@ -579,19 +597,34 @@ def main(argv: list[str]) -> int:
     write_report(out_md, features, curves, maxima, args.sample_pairs, args.bond_samples, bootstrap_max)
 
     print("\n=== Soft-kernel closure ===")
-    for row in pair_rows(maxima, "soft_area"):
+    for row in pair_rows(maxima, "soft_area", only_present=True):
         print(f"{row['pair']:11s} pred={row['ddF']:+.3f} target={row['target']:+.2f} gap={row['gap']:+.3f}")
+    if not any(a in maxima and b in maxima for _, a, b in [
+        ("flex-rigid", "flex", "rigid"),
+        ("semi-rigid", "semi", "rigid"),
+        ("semi-flex", "semi", "flex"),
+    ]):
+        print("(single-system run: no cross-system pair available)")
     if bootstrap_max is not None:
-        print("\n=== Bootstrap closure (mean ± σ) ===")
-        for name, a, b in [
+        pair_specs = [
             ("flex-rigid", "flex", "rigid"),
             ("semi-rigid", "semi", "rigid"),
             ("semi-flex", "semi", "flex"),
-        ]:
-            ratios = bootstrap_max[a]["soft_area"] / bootstrap_max[b]["soft_area"]
-            ddF_samples = -np.log(ratios)
-            print(f"{name:11s} pred={float(np.mean(ddF_samples)):+.3f} ± {float(np.std(ddF_samples)):.3f} "
-                  f"target={TARGETS[name]:+.2f}")
+        ]
+        available = [(n, a, b) for (n, a, b) in pair_specs
+                     if a in bootstrap_max and b in bootstrap_max]
+        if available:
+            print("\n=== Bootstrap closure (mean ± σ) ===")
+            for name, a, b in available:
+                ratios = bootstrap_max[a]["soft_area"] / bootstrap_max[b]["soft_area"]
+                ddF_samples = -np.log(ratios)
+                print(f"{name:11s} pred={float(np.mean(ddF_samples)):+.3f} ± {float(np.std(ddF_samples)):.3f} "
+                      f"target={TARGETS[name]:+.2f}")
+        print("\n=== Per-system soft area (bootstrap mean ± σ) ===")
+        for label, boot in bootstrap_max.items():
+            s = boot["soft_area"]
+            print(f"{label:11s} soft_area={float(np.mean(s)):.6g} ± {float(np.std(s)):.6g} "
+                  f"(point={maxima[label]['soft_area']:.6g})")
     print(f"\nSaved {out_npz.relative_to(root)} and {out_md.relative_to(root)}")
     return 0
 
