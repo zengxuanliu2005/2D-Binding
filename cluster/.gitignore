@@ -1,0 +1,7 @@
+# MD job outputs land here at runtime — keep out of git
+outputs/
+# logs from SLURM live with outputs
+*.log
+*.err
+# extracted intermediate npz, can be huge
+results/section0/merged_chain_coords/
