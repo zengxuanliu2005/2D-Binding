@@ -1,35 +1,42 @@
 """B2 — WLC-based theory for K2D(l; lp).
 
-Implements derivation/01_wlc_endpoint_distribution/{01_setup.md, 02_step_*.md,
-03_result.md} — the discrete worm-like chain Monte Carlo sampler and the
-P(R; lp, Lc) histogram. Downstream derivations (02 z-marginal, 03 K2D(l),
-04 ξ_RL, 05 F_conf) extend this module.
+Implements derivation/01_wlc_endpoint_distribution/ (P(R; lp, Lc) Monte
+Carlo) and derivation/02_z_marginal/ (membrane-anchored P_z(z; lp, Lc, k_a)).
+Downstream derivations (03 K2D(l), 04 ξ_RL, 05 F_conf) extend this module.
 
 PURPOSE
 =======
-Sample end-to-end vectors R of a discrete WLC chain with bending stiffness
-parameterised by persistence length lp and contour length Lc. Return the
-radial probability density P(R) on a chosen grid. Used by derivation 02
-to compute P(z) and by 03 to compute K2D(l).
+- Step 1 (B2.1): sample end-to-end vectors R of a discrete WLC chain with
+  bending stiffness parameterised by persistence length lp and contour
+  length Lc. Return the radial probability density P_R(R) on a grid.
+- Step 2 (B2.2): apply a Boltzmann-weighted anchor cone (effective
+  stiffness k_a = 255 ε/rad²) and project to lab z, returning P_z(z) on
+  a grid. This is what derivation/03 convolves into K2D(l).
 
 DERIVATION → CODE MAP
 =====================
-  (1.1)  Lc = N · b                          → N, b in WLCChain.__init__
-  (1.3)  U_bend = κ (1 - cos θ)              → sample_cos_theta()
-  (1.4)  lp ↔ κ via Langevin function        → kappa_from_lp()
-  (1.7)  rotate tangent in local frame       → rotate_tangent()
-  (3.x)  P(R) MC histogram                   → WLCChain.sample_endpoints()
-                                              + radial_pdf()
+  01 (1.1)  Lc = N · b                          → N, b in WLCChain.__init__
+  01 (1.3)  U_bend = κ (1 - cos θ)              → sample_cos_theta()
+  01 (1.4)  lp ↔ κ via Langevin function        → kappa_from_lp()
+  01 (1.7)  rotate tangent in local frame       → rotate_tangent()
+  01 (3.x)  P_R(R) MC histogram                 → WLCChain.sample_endpoints()
+                                                    + radial_pdf()
+  02 (1.2)  Boltzmann tilt density × Jacobian   → sample_anchor_theta()
+  02 (1.4)  θ_anchor = √(−2 ln u / κ_anchor)    → sample_anchor_theta()
+  02 (1.7)  z_lab = R_perp sinθ_a cos(φc-φa) + z_c cosθ_a → apply_anchor_cone()
+  02 (1.8)  P_z(z) histogram                    → z_marginal_pdf()
 
 PILOT (--pilot)
 ===============
-Runs the smallest possible MC: 1 system × 5000 chains, no parallelism,
-< 30 s. Asserts (a) MC endpoint mean and (b) Gaussian limit in tail for
-the flex case.
+Runs both steps in pilot mode (1 system × 5000 chains). < 5 s wall.
+Asserts limits 01 (Gaussian tail) and 02 (rigid limit z_peak ≈ Lc cosσ_θ).
 
 PRODUCTION
 ==========
-3 systems × 200_000 chains, ProcessPoolExecutor(--n-jobs 8). ~3 min wall.
+3 systems × 200_000 chains, ProcessPoolExecutor(--n-jobs 8). ~3 s wall.
+Outputs:
+    results/derivation_b2/wlc_endpoint_distribution.npz   (B2.1)
+    results/derivation_b2/wlc_z_marginal.npz              (B2.2)
 
 USAGE
 =====
@@ -55,6 +62,11 @@ from xi_rl_candidates import LP_PHD  # noqa: E402
 # Defaults match CLAUDE.md unit conventions and B2 acceptance criteria.
 DEFAULT_BOND_LENGTH_NM = 1.0   # σ = 1 nm; HARM r0 for protein bonds
 DEFAULT_LC_NM = 12.0           # 12 protein bonds × 1.0 σ
+
+# Anchor cone (derivation/02 eq. 1.1): k_a / kBT in rad⁻²
+# stage_essay §4.4 measured k_a = 255 ε/rad² with kBT = 1.1 ε.
+DEFAULT_KAPPA_ANCHOR = 255.0 / 1.1   # ≈ 231.8 rad⁻²
+KBT_PER_EPSILON = 1.1
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -295,11 +307,99 @@ def wlc_R2_continuum(lp: float, Lc: float) -> float:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# B2.2 — anchor cone + z-marginal P_z(z; lp, Lc, k_a)
+# ─────────────────────────────────────────────────────────────────────────────
+def sample_anchor_theta(kappa_anchor: float, n: int, rng: np.random.Generator
+                          ) -> np.ndarray:
+    """Sample n values of θ_anchor from p(θ) ∝ exp(-κ_a θ²/2) · sin θ.
+
+    Uses the small-angle Exponential mapping (derivation/02 eq. 1.4):
+        θ² ~ Exponential(λ = κ_a / 2)
+    Equivalent to θ = sqrt(-2 ln(U) / κ_a), U ~ Uniform(0,1).
+
+    Valid for κ_a ≫ 1 (σ_θ < 0.2 rad). For κ_anchor = 232 (our value),
+    typical θ ~ 0.07 rad — well within the small-angle regime. Cap at
+    π/2 to avoid the chain pointing into the membrane.
+    """
+    u = rng.random(size=n)
+    theta = np.sqrt(-2.0 * np.log(u) / kappa_anchor)
+    return np.clip(theta, 0.0, math.pi / 2)
+
+
+def apply_anchor_cone(R_chain: np.ndarray, kappa_anchor: float,
+                       rng: np.random.Generator) -> np.ndarray:
+    """Project chain-frame end-to-end vectors into lab z via anchor cone.
+
+    For each chain endpoint:
+      - sample (θ_a, φ_a) from the anchor cone density
+      - compute z_lab via derivation/02 eq. (1.7):
+            z_lab = R_perp · sin θ_a · cos(φ_c - φ_a) + z_c · cos θ_a
+
+    Inputs:
+      R_chain      : (n, 3) end-to-end vectors in chain frame
+      kappa_anchor : k_a / kBT in rad⁻²
+
+    Returns:
+      z_lab        : (n,) lab-frame z-coordinates of the binding bead
+    """
+    n = R_chain.shape[0]
+    x_c, y_c, z_c = R_chain[:, 0], R_chain[:, 1], R_chain[:, 2]
+    R_perp = np.sqrt(x_c ** 2 + y_c ** 2)
+    phi_c = np.arctan2(y_c, x_c)
+
+    theta_a = sample_anchor_theta(kappa_anchor, n, rng)
+    phi_a = rng.uniform(0.0, 2.0 * math.pi, size=n)
+
+    sin_t = np.sin(theta_a)
+    cos_t = np.cos(theta_a)
+    z_lab = R_perp * sin_t * np.cos(phi_c - phi_a) + z_c * cos_t
+    return z_lab
+
+
+def z_marginal_pdf(z_lab: np.ndarray, n_bins: int = 100,
+                    z_range: tuple[float, float] | None = None
+                    ) -> tuple[np.ndarray, np.ndarray]:
+    """Histogram of z_lab → (z_centres, P_z(z)) normalised to ∫ P dz = 1."""
+    if z_range is None:
+        z_min, z_max = z_lab.min() - 0.1, z_lab.max() + 0.1
+    else:
+        z_min, z_max = z_range
+    edges = np.linspace(z_min, z_max, n_bins + 1)
+    counts, _ = np.histogram(z_lab, bins=edges)
+    bin_width = edges[1] - edges[0]
+    centres = 0.5 * (edges[:-1] + edges[1:])
+    P = counts / (counts.sum() * bin_width)
+    return centres, P
+
+
+def rigid_limit_z_stats(Lc: float, kappa_anchor: float) -> tuple[float, float]:
+    """Analytic mean and std of z_lab in the rigid limit (R_chain ≈ Lc ẑ_chain).
+
+    z_lab = Lc · cos θ_a, with θ_a drawn from the small-angle Rayleigh
+    distribution (parameter σ²_θ = 1/κ_a).
+
+    To leading order in 1/κ_a:
+      ⟨cos θ_a⟩  = 1 - ⟨θ²⟩/2 + O(1/κ_a²) = 1 - 1/κ_a
+      Var(cos θ_a) = Var(θ²)/4 = 1/κ_a²   (Var(θ²) = 4/κ_a² for Rayleigh)
+      → σ_cos = 1/κ_a
+
+    So mean(z) ≈ Lc (1 - 1/κ_a),  std(z) ≈ Lc / κ_a.
+
+    The std scales as 1/κ_a (NOT 1/√κ_a) because the cosine fluctuation
+    is quadratic in θ — small angles barely affect z = cos θ.
+    """
+    inv_k = 1.0 / kappa_anchor
+    mean_z = Lc * (1.0 - inv_k)
+    std_z = Lc * inv_k
+    return mean_z, std_z
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Pilot mode
 # ─────────────────────────────────────────────────────────────────────────────
 def run_pilot() -> int:
-    """Smallest meaningful MC run + sanity asserts."""
-    print("\n▶  Pilot — single system, 5000 chains, single core")
+    """Smallest meaningful MC run + sanity asserts for B2.1 AND B2.2."""
+    print("\n▶  Pilot Step 1 (B2.1) — single system, 5000 chains, single core")
     t0 = time.time()
     # Use flex (Lc/lp = 10.5) — the Gaussian limit test is sharpest here.
     lp = LP_PHD["flex"]
@@ -338,7 +438,61 @@ def run_pilot() -> int:
             # Pilot tolerance is wide (small n_chains noisy); production tightens.
             fails.append(f"Gaussian-tail RMSE {rmse:.3f} > 0.30 (pilot tolerance)")
 
-    # Output for cross-check
+    # ── Pilot Step 2 (B2.2): two independent sanity checks ───────────────────
+    print("\n▶  Pilot Step 2 (B2.2) — anchor cone limit + chain-anchor consistency")
+
+    # Sanity A: pure anchor cone on a synthetic perfectly straight chain.
+    # Predict ⟨z⟩ = Lc · ⟨cos θ_a⟩ ≈ Lc (1 - 1/(2κ_a)),  σ_z ≈ Lc / √κ_a.
+    n_pilot = 20_000
+    straight = np.tile([0.0, 0.0, DEFAULT_LC_NM], (n_pilot, 1))
+    rng_a = np.random.default_rng(20260603)
+    z_lab_straight = apply_anchor_cone(straight, DEFAULT_KAPPA_ANCHOR, rng_a)
+    z_pred_mean, z_pred_std = rigid_limit_z_stats(DEFAULT_LC_NM, DEFAULT_KAPPA_ANCHOR)
+    z_mc_mean, z_mc_std = float(z_lab_straight.mean()), float(z_lab_straight.std())
+    print(f"   κ_anchor = {DEFAULT_KAPPA_ANCHOR:.1f} rad⁻²  "
+          f"(σ_θ = {1.0/math.sqrt(DEFAULT_KAPPA_ANCHOR)*180/math.pi:.2f}°)")
+    print(f"   Sanity A — synthetic straight chain (R=Lc·ẑ):")
+    print(f"      predicted: ⟨z⟩ = {z_pred_mean:.3f}  σ_z = {z_pred_std:.3f} nm")
+    print(f"      MC:        ⟨z⟩ = {z_mc_mean:.3f}  σ_z = {z_mc_std:.3f} nm")
+    if abs(z_mc_mean - z_pred_mean) / z_pred_mean > 0.005:
+        fails.append(f"sanity A ⟨z⟩: {z_mc_mean:.4f} vs {z_pred_mean:.4f}")
+    if abs(z_mc_std - z_pred_std) / z_pred_std > 0.05:
+        fails.append(f"sanity A σ_z: {z_mc_std:.4f} vs {z_pred_std:.4f}")
+
+    # Sanity B: real-chain MC × anchor cone. Predict ⟨z_lab⟩ = ⟨z_c⟩(MC) ·
+    # ⟨cos θ_a⟩(MC), Var(z_lab) decomposes as
+    #     ⟨cos²⟩⟨z_c²⟩ + ⟨sin²⟩⟨R_perp²⟩/2 - (⟨cos⟩⟨z_c⟩)²
+    # (using ⟨cos(φ_c - φ_a)⟩ = 0 and ⟨cos²(...)⟩ = 1/2.)
+    lp_rigid = LP_PHD["rigid"]
+    chain_r = WLCChain(lp_nm=lp_rigid, Lc_nm=DEFAULT_LC_NM, b_nm=DEFAULT_BOND_LENGTH_NM)
+    endpoints_r = chain_r.sample_endpoints(n_chains=20_000, seed=20260602)
+    rng_b = np.random.default_rng(20260604)
+    z_lab_full = apply_anchor_cone(endpoints_r, DEFAULT_KAPPA_ANCHOR, rng_b)
+    z_c = endpoints_r[:, 2]
+    R_perp_sq = endpoints_r[:, 0] ** 2 + endpoints_r[:, 1] ** 2
+    # Independent anchor sample to evaluate the predicted moments
+    n_anchor = 20_000
+    theta_a = sample_anchor_theta(DEFAULT_KAPPA_ANCHOR, n_anchor, rng_b)
+    mean_cos_a = float(np.cos(theta_a).mean())
+    mean_cos2_a = float((np.cos(theta_a) ** 2).mean())
+    mean_sin2_a = float((np.sin(theta_a) ** 2).mean())
+    pred_mean = float(z_c.mean()) * mean_cos_a
+    # Var(z_lab) under independent (R_chain, θ_a, φ_a):
+    var_pred = (mean_cos2_a * float((z_c ** 2).mean())
+                + 0.5 * mean_sin2_a * float(R_perp_sq.mean())
+                - pred_mean ** 2)
+    pred_std = math.sqrt(max(var_pred, 0.0))
+    mc_mean = float(z_lab_full.mean())
+    mc_std = float(z_lab_full.std())
+    print(f"   Sanity B — real WLC chain (rigid lp=84.6) × anchor cone:")
+    print(f"      predicted (⟨z_c⟩×⟨cosθ_a⟩ etc): ⟨z⟩={pred_mean:.3f}  σ_z={pred_std:.3f}")
+    print(f"      MC apply_anchor_cone:           ⟨z⟩={mc_mean:.3f}  σ_z={mc_std:.3f}")
+    if abs(mc_mean - pred_mean) > 0.1:
+        fails.append(f"sanity B ⟨z⟩: {mc_mean:.3f} vs {pred_mean:.3f}")
+    if abs(mc_std - pred_std) / max(pred_std, 1e-3) > 0.1:
+        fails.append(f"sanity B σ_z: {mc_std:.3f} vs {pred_std:.3f}")
+
+    # ── Output ───────────────────────────────────────────────────────────────
     out_dir = Path(__file__).resolve().parent.parent / "results" / "scratch" / "pilot_k2d_l_wlc"
     out_dir.mkdir(parents=True, exist_ok=True)
     np.savez(out_dir / "pilot_flex.npz",
@@ -346,7 +500,14 @@ def run_pilot() -> int:
              P_mc=P_mc, P_gauss=P_gauss,
              lp=lp, Lc=DEFAULT_LC_NM, b=DEFAULT_BOND_LENGTH_NM,
              N=chain.N, kappa=chain.kappa)
-    print(f"   saved {out_dir.relative_to(out_dir.parent.parent.parent)}/pilot_flex.npz")
+    np.savez(out_dir / "pilot_rigid_z.npz",
+             endpoints=endpoints_r, z_lab=z_lab_full,
+             lp=lp_rigid, Lc=DEFAULT_LC_NM, kappa_anchor=DEFAULT_KAPPA_ANCHOR,
+             z_pred_mean_A=z_pred_mean, z_pred_std_A=z_pred_std,
+             z_mc_mean_A=z_mc_mean, z_mc_std_A=z_mc_std,
+             pred_mean_B=pred_mean, pred_std_B=pred_std,
+             mc_mean_B=mc_mean, mc_std_B=mc_std)
+    print(f"   saved {out_dir.relative_to(out_dir.parent.parent.parent)}/pilot_*.npz")
 
     print()
     if fails:
@@ -354,10 +515,10 @@ def run_pilot() -> int:
         for f in fails:
             print(f"      • {f}")
         return 1
-    print("   ✓  PILOT PASSED — sanity asserts all green")
-    print(f"      ratio √⟨R²⟩(MC) / √⟨R²⟩(continuum) = {ratio:.3f}")
-    print(f"      Projected prod wall (200 K chains × 3 systems, 8 workers):")
-    print(f"      ≈ {wall * (200_000 / 5000) * 3 / 8:.0f} s")
+    print("   ✓  PILOT PASSED — both step 1 + step 2 asserts green")
+    print(f"      B2.1: √⟨R²⟩(MC) / √⟨R²⟩(continuum) = {ratio:.3f}")
+    print(f"      B2.2 sanity A (straight chain): ⟨z⟩ MC={z_mc_mean:.3f} vs {z_pred_mean:.3f}")
+    print(f"      B2.2 sanity B (WLC chain):      ⟨z⟩ MC={mc_mean:.3f} vs {pred_mean:.3f}")
     return 0
 
 
@@ -365,7 +526,7 @@ def run_pilot() -> int:
 # Production
 # ─────────────────────────────────────────────────────────────────────────────
 def run_production(n_mc: int, n_jobs: int, out_dir: Path) -> int:
-    """Full MC over all three systems; save endpoints + P(R) per system."""
+    """Full MC over all three systems for both B2.1 and B2.2."""
     print(f"\n▶  Production — 3 systems × {n_mc} chains, n_jobs={n_jobs}")
     t0 = time.time()
     results = {}
@@ -381,30 +542,51 @@ def run_production(n_mc: int, n_jobs: int, out_dir: Path) -> int:
         )
         R = np.linalg.norm(endpoints, axis=1)
         print(f"      ⟨R⟩  = {R.mean():.3f} nm   ⟨R²⟩^½ = {math.sqrt((R**2).mean()):.3f} nm")
+        # B2.2 — apply anchor cone
+        rng_anchor = np.random.default_rng(20260700 + hash(label) % 1_000_000)
+        z_lab = apply_anchor_cone(endpoints, DEFAULT_KAPPA_ANCHOR, rng_anchor)
+        print(f"      ⟨z⟩  = {z_lab.mean():.3f} nm   σ_z = {z_lab.std():.3f} nm")
         print(f"      MC time = {time.time() - tic:.1f} s")
         centres, P_mc = radial_pdf(endpoints, n_bins=60)
+        z_centres, P_z = z_marginal_pdf(z_lab, n_bins=100)
         results[label] = {
             "lp": lp, "Lc": DEFAULT_LC_NM, "b": DEFAULT_BOND_LENGTH_NM,
             "N": chain.N, "kappa": chain.kappa,
+            "kappa_anchor": DEFAULT_KAPPA_ANCHOR,
             "endpoints": endpoints, "R_centres": centres, "P_mc": P_mc,
+            "z_lab": z_lab, "z_centres": z_centres, "P_z": P_z,
             "R_mean": float(R.mean()), "R2_mean": float((R**2).mean()),
             "R2_continuum": wlc_R2_continuum(lp, DEFAULT_LC_NM),
+            "z_mean": float(z_lab.mean()), "z_std": float(z_lab.std()),
         }
 
     out_dir.mkdir(parents=True, exist_ok=True)
-    out_npz = out_dir / "wlc_endpoint_distribution.npz"
-    payload = {}
+    # Step 1 npz
+    out_npz_b21 = out_dir / "wlc_endpoint_distribution.npz"
+    payload_b21 = {}
     for label, d in results.items():
-        for k, v in d.items():
-            payload[f"{label}__{k}"] = v
-    np.savez(out_npz, **payload)
-    print(f"\n   saved {out_npz.relative_to(Path(__file__).resolve().parent.parent)}")
+        for k in ("lp", "Lc", "b", "N", "kappa", "endpoints", "R_centres",
+                   "P_mc", "R_mean", "R2_mean", "R2_continuum"):
+            payload_b21[f"{label}__{k}"] = d[k]
+    np.savez(out_npz_b21, **payload_b21)
+    print(f"\n   saved {out_npz_b21.relative_to(Path(__file__).resolve().parent.parent)}")
 
-    print(f"\n▶  Convergence sanity ({n_mc} chains)")
+    # Step 2 npz
+    out_npz_b22 = out_dir / "wlc_z_marginal.npz"
+    payload_b22 = {}
+    for label, d in results.items():
+        for k in ("lp", "Lc", "kappa_anchor", "z_lab", "z_centres", "P_z",
+                   "z_mean", "z_std"):
+            payload_b22[f"{label}__{k}"] = d[k]
+    np.savez(out_npz_b22, **payload_b22)
+    print(f"   saved {out_npz_b22.relative_to(Path(__file__).resolve().parent.parent)}")
+
+    # ── B2.1 convergence table ────────────────────────────────────────────────
+    print(f"\n▶  B2.1 — √⟨R²⟩ vs continuum WLC ({n_mc} chains)")
     print(f"   {'label':6s}  {'lp':>6s}  {'⟨R²⟩^½(MC)':>10s}  "
           f"{'continuum':>10s}  {'ratio':>6s}  measured Re*")
     Re_phd = {"rigid": 14.76, "semi": 11.65, "flex": 5.66}
-    fails = []
+    fails_b21 = []
     for label, d in results.items():
         sq = math.sqrt(d["R2_mean"])
         cont = math.sqrt(d["R2_continuum"])
@@ -414,15 +596,43 @@ def run_production(n_mc: int, n_jobs: int, out_dir: Path) -> int:
         print(f"   {label:6s}  {d['lp']:6.2f}  {sq:10.3f}  {cont:10.3f}  "
               f"{ratio:6.3f}  {re_meas:.2f} ({diff_pct:.1f}%)")
         if not (0.85 < ratio < 1.15):
-            fails.append(f"{label}: MC/continuum √⟨R²⟩ ratio = {ratio:.3f}")
+            fails_b21.append(f"{label}: MC/continuum √⟨R²⟩ ratio = {ratio:.3f}")
+    if not fails_b21:
+        print("   ✓  All three systems within 15% of continuum √⟨R²⟩.")
+
+    # ── B2.2 statistics — chain-anchor consistency check ─────────────────────
+    # Pilot Sanity B already validated apply_anchor_cone end-to-end. Here in
+    # production we just report ⟨z⟩, σ_z and check vs the chain-bending-aware
+    # prediction  ⟨z⟩ ≈ ⟨z_c⟩ · ⟨cos θ_a⟩.
+    print(f"\n▶  B2.2 — P_z(z) statistics (consistency with chain × anchor)")
+    print(f"   κ_anchor = {DEFAULT_KAPPA_ANCHOR:.1f} rad⁻²  "
+          f"(σ_θ = {1.0/math.sqrt(DEFAULT_KAPPA_ANCHOR)*180/math.pi:.2f}°)")
+    inv_k = 1.0 / DEFAULT_KAPPA_ANCHOR
+    cos_a_mean = 1.0 - inv_k                  # ⟨cos θ_a⟩ to leading order
+    print(f"   {'label':6s}  {'lp':>6s}  {'⟨z_c⟩':>7s}  {'⟨z⟩_MC':>7s}  "
+          f"{'⟨z_c⟩·⟨cosθ_a⟩':>14s}  {'σ_z':>7s}")
+    fails_b22 = []
+    for label, d in results.items():
+        z_c_mean = float(d["endpoints"][:, 2].mean())
+        z_pred = z_c_mean * cos_a_mean
+        z_mean = d["z_mean"]
+        z_std = d["z_std"]
+        rel = abs(z_mean - z_pred) / max(abs(z_pred), 1e-3)
+        print(f"   {label:6s}  {d['lp']:6.2f}  {z_c_mean:7.3f}  {z_mean:7.3f}  "
+              f"{z_pred:14.3f}  {z_std:7.3f}")
+        if rel > 0.02:
+            fails_b22.append(f"{label}: ⟨z⟩_MC ({z_mean:.3f}) vs "
+                              f"⟨z_c⟩·⟨cos θ_a⟩ ({z_pred:.3f}), Δ = {rel*100:.1f}%")
+    if not fails_b22:
+        print("   ✓  All three systems consistent with chain-frame × anchor cone "
+              "(within 2% on ⟨z⟩).")
 
     print(f"\n   total wall: {time.time() - t0:.1f} s")
-    if fails:
-        print("\n   ⚠  Convergence warnings:")
-        for f in fails:
+    if fails_b21 + fails_b22:
+        print("\n   ⚠  Warnings:")
+        for f in fails_b21 + fails_b22:
             print(f"      • {f}")
-    else:
-        print("\n   ✓  All three systems within 15% of continuum √⟨R²⟩.")
+        return 1
     return 0
 
 
