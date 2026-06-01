@@ -26,10 +26,7 @@ cd bundle_for_senior
 ## 二、环境
 
 ```bash
-# 如果你的 phys env 已经齐了，直接：
-conda activate phys
-
-# 否则任何 Python 3.10+ env，pip install：
+# 直接用任何 Python 3.10+ env (例如 base)，pip install 即可：
 pip install -r requirements.txt
 ```
 

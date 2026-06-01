@@ -64,19 +64,30 @@ printf 'Host : %s\n' "$(hostname)"
 printf 'Date : %s\n' "$(date -Iseconds)"
 printf 'PWD  : %s\n' "$(pwd)"
 
-# ── step 0: activate phys ────────────────────────────────────────────────────
-section 'Step 0/4 — activate phys env'
-for prefix in ~/miniconda3 ~/anaconda3 /opt/miniconda3 /opt/anaconda3; do
+# ── step 0: activate phys if local, else use whatever python on PATH ─────────
+section 'Step 0/4 — pick conda env (phys if local, else current)'
+for prefix in /opt/miniconda3 ~/miniconda3 /opt/anaconda3 ~/anaconda3; do
     if [[ -f "$prefix/etc/profile.d/conda.sh" ]]; then
         # shellcheck disable=SC1090
         source "$prefix/etc/profile.d/conda.sh"
         break
     fi
 done
-if conda activate phys 2>/dev/null; then
-    ok "phys env active, python = $(which python)"
-else
-    fail "could not activate phys — re-run 01_env_check.sh and fix it first."
+ok "using cluster python = $(which python)"
+# Quick verify the analysis stack imports — required for extract to work.
+python - <<'PY' 2>&1
+import importlib, sys
+all_ok = True
+for mod in ("numpy",):
+    try:
+        importlib.import_module(mod)
+    except ImportError as e:
+        print(f"   ✗  {mod} not importable: {e}", file=sys.stderr)
+        all_ok = False
+sys.exit(0 if all_ok else 2)
+PY
+if [[ $? -ne 0 ]]; then
+    fail "numpy not installed in the active env. Run 01_env_check.sh to confirm."
     exit 2
 fi
 

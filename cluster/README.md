@@ -22,8 +22,7 @@ cluster/
 ├── requirements.txt
 ├── run_analysis.sh                 ← senior's main entry point
 ├── env_setup/
-│   ├── check_env.sh
-│   └── install_phys.sh
+│   └── check_env.sh
 ├── slurm/
 │   ├── _base.slurm
 │   ├── single_pilot.slurm

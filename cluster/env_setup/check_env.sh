@@ -1,13 +1,14 @@
 #!/bin/bash
 ###############################################################################
-#  cluster/env_setup/check_env.sh — environment readiness probe
+#  cluster/env_setup/check_env.sh — environment readiness probe (server-side)
 #
-#  Wraps the same checks as cluster/trial/01_env_check.sh, callable from
-#  other scripts (run_section0_full.sh, run_slab_full.sh, etc) as a
-#  one-stop "is this env usable?" gate.
+#  Wraps the checks needed before §0 bundle or Workstream C MD can run on
+#  cluster-A. Reused by run_section0_full.sh / run_slab_full.sh as a gate.
 #
-#  If you're just starting on cluster-A, prefer running the trial scripts
-#  in order (01 → 02 → 03 → 04) — they give you richer output.
+#  NOTE: we do NOT try to activate `phys` here. `phys` is Zengxuan's local
+#  laptop env name; on cluster-A we use whatever python is on PATH (the
+#  system `base` env from /opt/miniconda3). All we need is that the analysis
+#  stack imports.
 #
 ###############################################################################
 set -u
@@ -28,45 +29,39 @@ cat <<'BAN'
 PURPOSE
 ─────────
 Confirms cluster-A has what we need to run §0 bundle + Workstream C MD:
-  (a) conda + the `phys` env activate-able
+  (a) conda installation reachable (just for sourcing profile.d)
   (b) numpy / scipy / pandas / matplotlib / scikit-learn importable
-  (c) pygamd importable (only needed for C; optional otherwise)
+      in whatever python is on PATH
+  (c) pygamd / cu_gala importable (only Workstream C needs it; optional)
   (d) sbatch on PATH + free disk on /mnt/nfs/ugstu/liuzx
 
-If anything fails here, fix it before submitting any cluster jobs.
+We deliberately do NOT activate a `phys` env — that's Zengxuan's local
+env, not relevant on the server.
 
 BAN
-printf 'Host : %s\n' "$(hostname)"
-printf 'Date : %s\n' "$(date -Iseconds)"
 
-# ── step 1: conda envs ──────────────────────────────────────────────────────
-section 'Step 1/4 — conda + envs'
+# ── step 1: conda + sourceability ───────────────────────────────────────────
+section 'Step 1/4 — conda installation'
 if ! command -v conda >/dev/null 2>&1; then
-    fail "conda not on PATH. Try: source ~/miniconda3/etc/profile.d/conda.sh"
-    exit 1
+    fail "conda not on PATH. Trying common prefixes anyway."
 fi
-ok "conda found at $(which conda) ($(conda --version 2>&1))"
-echo
-conda env list
+ok "conda found at $(which conda 2>/dev/null) ($(conda --version 2>&1))"
 
-# ── step 2: activate phys ───────────────────────────────────────────────────
-section 'Step 2/4 — activate phys env'
-for prefix in ~/miniconda3 ~/anaconda3 /opt/miniconda3 /opt/anaconda3; do
+CONDA_SH=""
+for prefix in /opt/miniconda3 ~/miniconda3 /opt/anaconda3 ~/anaconda3; do
     if [[ -f "$prefix/etc/profile.d/conda.sh" ]]; then
+        CONDA_SH="$prefix/etc/profile.d/conda.sh"
         # shellcheck disable=SC1090
-        source "$prefix/etc/profile.d/conda.sh"
+        source "$CONDA_SH"
+        ok "sourced $CONDA_SH"
         break
     fi
 done
-if conda activate phys 2>/dev/null; then
-    ok "phys active, python = $(which python) ($(python --version 2>&1))"
-else
-    fail "phys env not found. Run bash cluster/env_setup/install_phys.sh"
-    exit 2
-fi
+[[ -z "$CONDA_SH" ]] && warn "no conda.sh found; will continue with current python on PATH"
 
-# ── step 3: analysis stack + pygamd ─────────────────────────────────────────
-section 'Step 3/4 — Python packages'
+# ── step 2: python + analysis stack ─────────────────────────────────────────
+section 'Step 2/4 — python + analysis packages'
+echo "   using python = $(which python) ($(python --version 2>&1))"
 python - <<'PY' 2>&1
 import importlib, sys
 ok = True
@@ -77,7 +72,15 @@ for mod in ("numpy", "scipy", "pandas", "matplotlib", "sklearn"):
     except ImportError as e:
         print(f"   ✗  {mod}: {e}")
         ok = False
-# pygamd optional — only Workstream C needs it
+sys.exit(0 if ok else 3)
+PY
+if [[ $? -ne 0 ]]; then
+    fail "analysis stack incomplete. Install with: pip install numpy scipy pandas matplotlib scikit-learn"
+fi
+
+# pygamd / cu_gala is optional — only Workstream C needs it
+echo
+python - <<'PY' 2>&1
 try:
     import pygamd
     print(f"   ✓  pygamd       {getattr(pygamd, '__version__', '?')}  (constrained-h MD enabled)")
@@ -85,13 +88,12 @@ except ImportError:
     try:
         from poetry import cu_gala
         print("   ✓  cu_gala via poetry  (constrained-h MD enabled)")
-    except ImportError as e:
-        print(f"   ⚠  pygamd / cu_gala MISSING  ({e})  — §0 still works, C blocked")
-sys.exit(0 if ok else 3)
+    except ImportError:
+        print("   ⚠  pygamd / cu_gala MISSING  — §0 still works, Workstream C blocked")
 PY
 
-# ── step 4: SLURM + disk ────────────────────────────────────────────────────
-section 'Step 4/4 — SLURM + disk'
+# ── step 3: SLURM ───────────────────────────────────────────────────────────
+section 'Step 3/4 — SLURM scheduler'
 if command -v sbatch >/dev/null 2>&1; then
     ok "sbatch at $(which sbatch) ($(sbatch --version 2>&1 | head -1))"
     echo "   partitions visible:"
@@ -100,17 +102,19 @@ else
     fail "sbatch not on PATH"
 fi
 
+# ── step 4: NFS workspace ───────────────────────────────────────────────────
+section 'Step 4/4 — NFS workspace'
 if [[ -d /mnt/nfs/ugstu/liuzx ]]; then
-    echo "   disk free on /mnt/nfs/ugstu/liuzx:"
+    ok "/mnt/nfs/ugstu/liuzx mounted"
     df -h /mnt/nfs/ugstu/liuzx | sed 's/^/     /'
 else
-    warn "/mnt/nfs/ugstu/liuzx not mounted"
+    warn "/mnt/nfs/ugstu/liuzx not mounted on this node"
 fi
 
 # ── summary ─────────────────────────────────────────────────────────────────
 section 'Summary'
 if [[ "$FAILED" -eq 0 ]]; then
-    echo "   ✓✓✓  Environment is ready. You can now run §0 bundle and/or C MD."
+    echo "   ✓✓✓  Server environment is ready."
 else
     echo "   ✗   Fix the FAIL items above before submitting jobs."
     exit 1

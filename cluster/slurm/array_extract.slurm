@@ -47,7 +47,6 @@ for _prefix in /opt/miniconda3 ~/miniconda3 /opt/anaconda3 ~/anaconda3; do
         break
     fi
 done
-conda activate phys
 cd "${SLURM_SUBMIT_DIR:-$(pwd)}"
 mkdir -p cluster/outputs/logs "cluster/outputs/extracted/$SYS"
 
