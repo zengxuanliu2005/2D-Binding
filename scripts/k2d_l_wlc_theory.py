@@ -372,6 +372,69 @@ def z_marginal_pdf(z_lab: np.ndarray, n_bins: int = 100,
     return centres, P
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# B2.3 — Binding kernel + K2D(l) convolution
+# ─────────────────────────────────────────────────────────────────────────────
+# Hard-gate kernel radius — matches raw_tether_partition_k2d.py::HARD_R.
+DEFAULT_RCUT_NM = 1.5
+
+
+def hard_lateral_acceptance(dz: np.ndarray, rcut: float = DEFAULT_RCUT_NM
+                             ) -> np.ndarray:
+    """v(dz) = π (rcut² − dz²) for |dz| < rcut, else 0   (eq. 1.4)."""
+    r2 = rcut ** 2 - dz ** 2
+    return np.where(r2 > 0, math.pi * r2, 0.0)
+
+
+def k2d_l_curve(z_R_lab: np.ndarray, z_L_lab: np.ndarray, l_grid: np.ndarray,
+                  rcut: float = DEFAULT_RCUT_NM, truncate_negative: bool = True,
+                  ) -> np.ndarray:
+    """Evaluate K2D(l) by MC averaging eq. (1.6) over chain endpoint pairs.
+
+    z_R_lab, z_L_lab : (n_samples,) z-coords in lab frame
+    l_grid           : (n_l,) membrane separations to evaluate K2D at
+    rcut             : hard-gate kernel radius (nm)
+    truncate_negative: drop samples with z < 0 (chain ends below membrane)
+
+    Returns
+    -------
+    K2D : (n_l,) values in nm²
+    """
+    if truncate_negative:
+        z_R_lab = z_R_lab[z_R_lab >= 0]
+        z_L_lab = z_L_lab[z_L_lab >= 0]
+    n = min(z_R_lab.size, z_L_lab.size)
+    z_R = z_R_lab[:n]
+    z_L = z_L_lab[:n]
+
+    K2D = np.empty_like(l_grid)
+    for i, l in enumerate(l_grid):
+        dz = z_R + z_L - l
+        v = hard_lateral_acceptance(dz, rcut)
+        K2D[i] = v.mean()
+    return K2D
+
+
+def k2d_l_stats(l_grid: np.ndarray, K2D: np.ndarray) -> dict:
+    """Return K2D,max, l*, ⟨l⟩, σ_K2D (eqs. 1.7–1.11)."""
+    i_max = int(np.argmax(K2D))
+    K2D_max = float(K2D[i_max])
+    l_star = float(l_grid[i_max])
+    if K2D.sum() == 0:
+        return {"K2D_max": 0.0, "l_star": l_star, "l_mean": float("nan"),
+                "sigma_K2D": float("nan"), "Z": 0.0}
+    Z = float(np.trapezoid(K2D, l_grid))
+    l_mean = float(np.trapezoid(l_grid * K2D, l_grid) / Z)
+    var = float(np.trapezoid((l_grid - l_mean) ** 2 * K2D, l_grid) / Z)
+    return {
+        "K2D_max": K2D_max,
+        "l_star": l_star,
+        "l_mean": l_mean,
+        "sigma_K2D": math.sqrt(max(var, 0.0)),
+        "Z": Z,
+    }
+
+
 def rigid_limit_z_stats(Lc: float, kappa_anchor: float) -> tuple[float, float]:
     """Analytic mean and std of z_lab in the rigid limit (R_chain ≈ Lc ẑ_chain).
 
@@ -492,6 +555,30 @@ def run_pilot() -> int:
     if abs(mc_std - pred_std) / max(pred_std, 1e-3) > 0.1:
         fails.append(f"sanity B σ_z: {mc_std:.3f} vs {pred_std:.3f}")
 
+    # ── Pilot Step 3 (B2.3): K2D(l) for rigid×rigid + shape sanity ──────────
+    print("\n▶  Pilot Step 3 (B2.3) — K2D(l) for rigid×rigid")
+    # Use already-sampled rigid z_lab (Sanity B above)
+    z_R = z_lab_full
+    z_L = z_lab_full  # symmetric R-L
+    l_grid_pilot = np.linspace(0.0, 26.0, 14)  # 14 points, ~2 nm spacing
+    K2D_pilot = k2d_l_curve(z_R, z_L, l_grid_pilot, rcut=DEFAULT_RCUT_NM)
+    stats_pilot = k2d_l_stats(l_grid_pilot, K2D_pilot)
+    print(f"   l grid: 14 points × {l_grid_pilot[1] - l_grid_pilot[0]:.2f} nm spacing, "
+          f"rcut = {DEFAULT_RCUT_NM} nm")
+    print(f"   K2D,max  = {stats_pilot['K2D_max']:.3f} nm²")
+    print(f"   l*       = {stats_pilot['l_star']:.2f} nm  "
+          f"(prediction: 2·⟨z⟩_rigid ≈ {2*mc_mean:.2f} nm)")
+    print(f"   ⟨l⟩      = {stats_pilot['l_mean']:.3f} nm")
+    print(f"   σ_K2D    = {stats_pilot['sigma_K2D']:.3f} nm  "
+          f"(reference: senior's fitted ξ_RL ≈ 0.685 nm)")
+    # Rough sanity: peak near 2·⟨z⟩, σ comparable to √2 · σ_z_rigid (1 nm-ish)
+    if not (15.0 < stats_pilot['l_star'] < 25.0):
+        fails.append(f"K2D,rigid×rigid peak at unexpected l = {stats_pilot['l_star']:.2f} nm "
+                      "(expected near 2·⟨z⟩ ≈ 22 nm)")
+    if not (0.3 < stats_pilot['sigma_K2D'] < 2.5):
+        fails.append(f"K2D,rigid×rigid σ_K2D = {stats_pilot['sigma_K2D']:.3f} nm "
+                      "outside expected [0.3, 2.5] nm for rigid")
+
     # ── Output ───────────────────────────────────────────────────────────────
     out_dir = Path(__file__).resolve().parent.parent / "results" / "scratch" / "pilot_k2d_l_wlc"
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -507,6 +594,9 @@ def run_pilot() -> int:
              z_mc_mean_A=z_mc_mean, z_mc_std_A=z_mc_std,
              pred_mean_B=pred_mean, pred_std_B=pred_std,
              mc_mean_B=mc_mean, mc_std_B=mc_std)
+    np.savez(out_dir / "pilot_k2d_rigid.npz",
+             l_grid=l_grid_pilot, K2D=K2D_pilot, rcut=DEFAULT_RCUT_NM,
+             **stats_pilot)
     print(f"   saved {out_dir.relative_to(out_dir.parent.parent.parent)}/pilot_*.npz")
 
     print()
@@ -515,10 +605,12 @@ def run_pilot() -> int:
         for f in fails:
             print(f"      • {f}")
         return 1
-    print("   ✓  PILOT PASSED — both step 1 + step 2 asserts green")
+    print("   ✓  PILOT PASSED — all three steps green")
     print(f"      B2.1: √⟨R²⟩(MC) / √⟨R²⟩(continuum) = {ratio:.3f}")
-    print(f"      B2.2 sanity A (straight chain): ⟨z⟩ MC={z_mc_mean:.3f} vs {z_pred_mean:.3f}")
-    print(f"      B2.2 sanity B (WLC chain):      ⟨z⟩ MC={mc_mean:.3f} vs {pred_mean:.3f}")
+    print(f"      B2.2 sanity A: ⟨z⟩ MC={z_mc_mean:.3f} vs {z_pred_mean:.3f}")
+    print(f"      B2.2 sanity B: ⟨z⟩ MC={mc_mean:.3f} vs {pred_mean:.3f}")
+    print(f"      B2.3 K2D rigid×rigid: peak {stats_pilot['l_star']:.2f} nm, "
+          f"σ_K2D {stats_pilot['sigma_K2D']:.3f} nm")
     return 0
 
 
@@ -627,10 +719,48 @@ def run_production(n_mc: int, n_jobs: int, out_dir: Path) -> int:
         print("   ✓  All three systems consistent with chain-frame × anchor cone "
               "(within 2% on ⟨z⟩).")
 
+    # ── B2.3 — K2D(l) per same-system pair on fine l-grid ───────────────────
+    print(f"\n▶  B2.3 — K2D(l) convolution + σ_K2D for 3 same-system pairs")
+    print(f"   l-grid: 0–26 nm × Δl = 0.1 nm   |   rcut = {DEFAULT_RCUT_NM} nm "
+          f"(hard gate)")
+    l_grid = np.arange(0.0, 26.0 + 0.05, 0.1)
+    k2d_results = {}
+    print(f"   {'pair':12s}  {'K2D,max (nm²)':>14s}  {'l* (nm)':>8s}  "
+          f"{'⟨l⟩ (nm)':>9s}  {'σ_K2D (nm)':>11s}  measured ξ_RL")
+    measured_xi_rl = {"rigid": 0.685, "semi": 2.076, "flex": 2.253}
+    for label in ("rigid", "semi", "flex"):
+        z_lab = results[label]["z_lab"]
+        K2D = k2d_l_curve(z_lab, z_lab, l_grid, rcut=DEFAULT_RCUT_NM)
+        st = k2d_l_stats(l_grid, K2D)
+        k2d_results[label] = {"l_grid": l_grid, "K2D": K2D, **st}
+        xi_meas = measured_xi_rl[label]
+        diff = 100 * abs(st["sigma_K2D"] - xi_meas) / xi_meas
+        print(f"   {label+'×'+label:12s}  {st['K2D_max']:14.4f}  "
+              f"{st['l_star']:8.2f}  {st['l_mean']:9.3f}  "
+              f"{st['sigma_K2D']:11.4f}  {xi_meas:.3f} ({diff:.0f}%)")
+
+    out_npz_b23 = out_dir / "k2d_l_curves.npz"
+    payload_b23 = {"l_grid": l_grid, "rcut": DEFAULT_RCUT_NM}
+    for label, d in k2d_results.items():
+        payload_b23[f"{label}__K2D"] = d["K2D"]
+        for k in ("K2D_max", "l_star", "l_mean", "sigma_K2D", "Z"):
+            payload_b23[f"{label}__{k}"] = d[k]
+    np.savez(out_npz_b23, **payload_b23)
+    print(f"   saved {out_npz_b23.relative_to(Path(__file__).resolve().parent.parent)}")
+
+    # Monotone ordering check (criterion 3 in 00_intent.md)
+    sigmas = [k2d_results[l]["sigma_K2D"] for l in ("rigid", "semi", "flex")]
+    fails_b23 = []
+    if not (sigmas[0] < sigmas[1] < sigmas[2]):
+        fails_b23.append(f"σ_K2D not monotone: {sigmas[0]:.3f} < "
+                          f"{sigmas[1]:.3f} < {sigmas[2]:.3f} ?")
+    if not fails_b23:
+        print("   ✓  σ_K2D ordering rigid < semi < flex respected.")
+
     print(f"\n   total wall: {time.time() - t0:.1f} s")
-    if fails_b21 + fails_b22:
+    if fails_b21 + fails_b22 + fails_b23:
         print("\n   ⚠  Warnings:")
-        for f in fails_b21 + fails_b22:
+        for f in fails_b21 + fails_b22 + fails_b23:
             print(f"      • {f}")
         return 1
     return 0
