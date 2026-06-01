@@ -161,7 +161,9 @@ if command -v sbatch >/dev/null 2>&1; then
     echo
     echo "   visible partitions (looking for 'gpu'):"
     sinfo -h -o "     %P   nodes=%D   state=%t" 2>&1 | head -10
-    if sinfo -h -o "%P" 2>/dev/null | grep -qx 'gpu'; then
+    # On this cluster sinfo prints 'gpu*' (the * marks it as default partition);
+    # accept either form.
+    if sinfo -h -o "%P" 2>/dev/null | grep -qE '^gpu\*?$'; then
         ok "'gpu' partition exists — matches senior's analysis/analysis.slurm"
     else
         warn "no 'gpu' partition? cluster/slurm/_base.slurm needs adjusting"

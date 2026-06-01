@@ -37,7 +37,13 @@ echo "  Goal: validate template + cu_gala wiring + summary writer"
 echo "  job ${SLURM_JOB_ID:-?}  start $(date -Iseconds)"
 echo "==========================================================="
 
-source ~/miniconda3/etc/profile.d/conda.sh
+# auto-discover conda (cluster-A is /opt/miniconda3, laptops are ~/miniconda3)
+for _prefix in /opt/miniconda3 ~/miniconda3 /opt/anaconda3 ~/anaconda3; do
+    if [[ -f "$_prefix/etc/profile.d/conda.sh" ]]; then
+        source "$_prefix/etc/profile.d/conda.sh"
+        break
+    fi
+done
 conda activate phys
 cd "${SLURM_SUBMIT_DIR:-$(pwd)}"
 mkdir -p cluster/outputs/logs cluster/outputs/slab_pilot
