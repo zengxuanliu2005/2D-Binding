@@ -3,7 +3,7 @@
 Methods:
   1. Target — Hu master curve K2D,max ratios (PhD PPT)
   2. PhD PPT s25 — trans + rot + conf-WLC (her published values)
-  3. phd_closure — S1-S23 four-term (trans + conf + end-volume + rot)
+  3. Four-term decomposition — S1-S23 four-term (trans + conf + end-volume + rot)
   4. Raw partition — polymer-tether partition function (bootstrap)
   5. s25 reimpl — our trans + rot + WLC built from chain_coords data,
       L_c = 12 nm (model contour), l_p from xi_rl_candidates.LP_PHD
@@ -42,7 +42,7 @@ TARGET = {"flex-rigid": 3.56, "semi-rigid": 2.68, "semi-flex": -0.90}
 # PhD PPT slide 25: trans + rot + conf (Marko-Siggia WLC)
 PHD_PPT = {"flex-rigid": 3.64, "semi-rigid": 2.47, "semi-flex": -1.18}
 
-# phd_closure: F_t + F_c + F_bond + F_rot (S1-S23)
+# Four-term decomposition (S1-S23): F_t + F_c + F_bond + F_rot (S1-S23)
 PHD_CLOSURE = {"flex-rigid": 3.96, "semi-rigid": 2.69, "semi-flex": -1.27}
 
 # Raw partition (PR #1 bootstrap): mean ± σ
@@ -52,8 +52,8 @@ RAW_PARTITION = {
     "semi-flex": (-0.915, 0.071),
 }
 
-# phd_closure S1-S23 with frame-level bootstrap (200 resamples): mean ± σ
-# (point estimates from PR #5; σ from scripts/phd_closure.py --bootstrap)
+# Four-term decomposition S1-S23 with frame-level bootstrap (200 resamples): mean ± σ
+# (point estimates from PR #5; σ from scripts/closure_four_term.py --bootstrap)
 PHD_CLOSURE_BOOT = {
     "flex-rigid": (3.988, 0.031),
     "semi-rigid": (2.707, 0.031),
@@ -84,7 +84,28 @@ def inverse_variance_weighted(values, sigmas):
     return float(mean), float(sigma)
 
 
+_BANNER = """
+╔════════════════════════════════════════════════════════════════════╗
+║  reconcile_methods.py — five-method ΔΔF consensus                 ║
+╚════════════════════════════════════════════════════════════════════╝
+
+PURPOSE
+─────────
+Compares five independent ΔΔF estimates:
+
+  1. Target — Hu master-curve K2D,max ratios (from senior's PPT)
+  2. PhD PPT s25 — trans + rot + conf-WLC, her published values
+  3. Four-term decomposition (S1-S23) — local closure_four_term.py
+  4. Raw partition — bootstrap from raw_tether_partition_k2d.py
+  5. WLC three-term reimpl — local closure_wlc_three_term.py
+
+Reports pairwise gaps, z-scores against bootstrap σ, and an
+inverse-variance weighted consensus. Saves figure + markdown table.
+"""
+
+
 def main():
+    print(_BANNER)
     print("=" * 70)
     print("Q2: Method reconciliation — ΔΔF consensus")
     print("=" * 70)
@@ -93,7 +114,7 @@ def main():
     methods = {
         "Target (Hu fit)": TARGET,
         "PhD PPT s25": PHD_PPT,
-        "phd_closure (S1-S23)": PHD_CLOSURE,
+        "Four-term decomposition (S1-S23)": PHD_CLOSURE,
         "Raw partition": {k: v[0] for k, v in RAW_PARTITION.items()},
         "s25 reimpl": {k: v[0] for k, v in S25_REIMPL.items()},
     }
@@ -148,7 +169,7 @@ def main():
     print("\n--- Inverse-variance weighted consensus ---")
 
     # Use target + raw partition + PhD PPT (the three most independent methods)
-    # Omit phd_closure (known double-counting in end-volume term)
+    # Omit Four-term decomposition (known double-counting in end-volume term)
     consensus = {}
     for pair_key in ["flex-rigid", "semi-rigid", "semi-flex"]:
         vals = [TARGET[pair_key], PHD_PPT[pair_key], RAW_PARTITION[pair_key][0]]
@@ -193,7 +214,7 @@ def main():
     # Panel (b): Gap from target with error bands (4 non-target methods)
     panel_b_methods = [
         ("PhD PPT s25",  PHD_PPT,                                                  [0.15]*3,                                                                  "#1f77b4"),
-        ("phd_closure",  PHD_CLOSURE,                                              [PHD_CLOSURE_BOOT[k][1] for k in ["flex-rigid","semi-rigid","semi-flex"]],"#ff7f0e"),
+        ("Four-term",  PHD_CLOSURE,                                              [PHD_CLOSURE_BOOT[k][1] for k in ["flex-rigid","semi-rigid","semi-flex"]],"#ff7f0e"),
         ("Raw partition",{k: v[0] for k, v in RAW_PARTITION.items()},              [RAW_PARTITION[k][1] for k in ["flex-rigid","semi-rigid","semi-flex"]],   "#2ca02c"),
         ("s25 reimpl",   {k: v[0] for k, v in S25_REIMPL.items()},                 [S25_REIMPL[k][1] for k in ["flex-rigid","semi-rigid","semi-flex"]],      "#9467bd"),
     ]
@@ -237,9 +258,9 @@ def main():
                  "K2D,max = 12705 / 875 / 362 nm² → ΔΔF = 3.56 / 2.68 / −0.90 kBT.\n")
         fp.write("2. **PhD PPT s25:** trans + rot + conf (WLC Marko-Siggia), "
                  "as published on PPT slide 25 with her implicit L_c choice.\n")
-        fp.write("3. **phd_closure (S1-S23):** trans + conformal + end-volume + rot; "
+        fp.write("3. **Four-term decomposition (S1-S23):** trans + conformal + end-volume + rot; "
                  "evaluated on chain_coords.npz. Bootstrap σ from "
-                 "`phd_closure.py --bootstrap`.\n")
+                 "`closure_four_term.py --bootstrap`.\n")
         fp.write("4. **Raw partition:** polymer-tether partition function with "
                  "soft binding kernel; bootstrap n=200 frames. "
                  "Ab initio — no fitting to (ξ⊥, K2D) data.\n")
@@ -247,7 +268,7 @@ def main():
                  "chain_coords data with the standard Marko–Siggia integrated "
                  "stretching free energy, L_c = 12 nm (model contour, 12 protein "
                  "bonds × 1.0 σ), l_p from `xi_rl_candidates.LP_PHD`. "
-                 "Bootstrap σ from `phd_closure_s25.py --bootstrap`.\n\n")
+                 "Bootstrap σ from `closure_wlc_three_term.py --bootstrap`.\n\n")
 
         fp.write("## ΔΔF comparison (kBT)\n\n")
         fp.write("| Method | flex−rigid | semi−rigid | semi−flex |\n")
@@ -259,7 +280,7 @@ def main():
         fp.write("\n## Residual gaps from target\n\n")
         fp.write("| Method | flex−rigid | semi−rigid | semi−flex | max gap |\n")
         fp.write("|---|---:|---:|---:|---:|\n")
-        for name in ["PhD PPT s25", "phd_closure (S1-S23)", "Raw partition", "s25 reimpl"]:
+        for name in ["PhD PPT s25", "Four-term decomposition (S1-S23)", "Raw partition", "s25 reimpl"]:
             vals = methods[name]
             gaps = [abs(vals[k] - TARGET[k]) for k in ["flex-rigid", "semi-rigid", "semi-flex"]]
             fp.write(f"| {name} | {gaps[0]:.3f} | {gaps[1]:.3f} | {gaps[2]:.3f} | {max(gaps):.3f} |\n")
@@ -284,7 +305,7 @@ def main():
                  "noise.\n\n")
 
         fp.write("## Consensus estimator (inverse-variance weighted)\n\n")
-        fp.write("Combines target + PhD PPT s25 + raw partition (omits phd_closure "
+        fp.write("Combines target + PhD PPT s25 + raw partition (omits Four-term decomposition "
                  "due to known end-volume double-counting). "
                  "Estimated σ: target 0.10, PhD PPT 0.15, raw partition bootstrap.\n\n")
         fp.write("| Pair | consensus (kBT) | target | gap |\n")
@@ -304,7 +325,7 @@ def main():
                  "(chain-response for raw partition; WLC Gaussian approximation "
                  "for PhD PPT). The target itself may be biased by the Hu "
                  "master curve's Gaussian-K2D(l) assumption.\n\n")
-        fp.write("3. **phd_closure (S1-S23) has the largest residuals** (up to "
+        fp.write("3. **Four-term decomposition (S1-S23) has the largest residuals** (up to "
                  "0.4 kBT), consistent with known double-counting between the "
                  "conformal and end-volume terms.\n\n")
         fp.write("4. **The consensus estimator is within 0.02 kBT of the target "

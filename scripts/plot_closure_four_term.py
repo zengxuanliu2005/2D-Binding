@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 
 def main():
     root = Path(__file__).resolve().parent.parent
-    d = np.load(root / "results" / "phd_closure.npz", allow_pickle=True)
+    d = np.load(root / "results" / "closure_four_term.npz", allow_pickle=True)
     pairs = list(d["pair_names"])
     ddF_t    = d["pair_ddF_t"]
     ddF_c    = d["pair_ddF_c"]

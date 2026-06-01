@@ -129,7 +129,33 @@ def summarize(name: str, data: dict[str, np.ndarray]) -> None:
         print(f"  term tilt deg mean={tilt.mean():.2f}  std={tilt.std():.2f}  (from chain axis +z)")
 
 
+_BANNER = """
+╔════════════════════════════════════════════════════════════════════╗
+║  diagnose_bound_vs_unbound.py                                     ║
+║  Bound vs unbound R-chain geometry per system                     ║
+╚════════════════════════════════════════════════════════════════════╝
+
+PURPOSE
+─────────
+Splits R chains by per-frame bound state and reports mean / std of
+binding-bead z-reach and chain-axis tilt for each population. Used to
+diagnose whether the equilibrium MD sampling has a geometric bias
+between bound and unbound configurations.
+
+Interpretation
+  Δz > 0   : bound chains stand more upright than unbound (expected
+              for narrow K2D(l) systems; large Δz hints at a sampling
+              bias that the raw-tether partition will inherit)
+  Δtilt > 0 : bound chains tilt less than unbound
+
+A1 finding (s001 only): rigid Δz=−0.26 nm, Δtilt=+7°; flex Δz=−1.48 nm,
+Δtilt=+14°. Re-run with the senior's full data should shrink these
+toward statistical noise IF the "data volume" hypothesis is right.
+"""
+
+
 def main() -> None:
+    print(_BANNER)
     root = Path(__file__).resolve().parent.parent
     for label, sysname in SYSTEMS.items():
         sys_dir = root / "outputs" / sysname / "s001"

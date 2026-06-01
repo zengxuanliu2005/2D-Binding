@@ -1,8 +1,8 @@
 """Assemble the PhD's S1-S23 ΔF decomposition into a closure attempt.
 
 For each system, compute the four terms F_t, F_c, F_bond, F_rot at the
-per-pair level using inputs from `phd_inputs.py` and formulas from
-`phd_formula.py`. Then for each of the three pair comparisons
+per-pair level using inputs from `system_inputs.py` and formulas from
+`free_energy_terms.py`. Then for each of the three pair comparisons
 (flex−rigid, semi−rigid, semi−flex) compute ΔΔF_term and ΔΔF_sum, and
 compare against the target ΔΔF from CLAUDE.md.
 
@@ -25,10 +25,10 @@ from pathlib import Path
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).parent))
-from phd_inputs import (  # noqa: E402
+from system_inputs import (  # noqa: E402
     load_all, load_all_raw, system_inputs_from_arrays, AREA, B, R_MAX,
 )
-from phd_formula import F_trans, F_conf, F_bond, F_rot  # noqa: E402
+from free_energy_terms import F_trans, F_conf, F_bond, F_rot  # noqa: E402
 
 TARGETS = {"flex−rigid": +3.56, "semi−rigid": +2.68, "semi−flex": -0.90}
 LABELS = ("rigid", "semi", "flex")
@@ -180,7 +180,29 @@ def bootstrap_closure(raw_by_label: dict, n_bootstrap: int, seed: int,
     return {"pair": pair_acc, "per_system": sys_acc}
 
 
+_BANNER = """
+╔════════════════════════════════════════════════════════════════════╗
+║  closure_four_term.py — S1-S23 four-term ΔF decomposition         ║
+╚════════════════════════════════════════════════════════════════════╝
+
+PURPOSE
+─────────
+Computes the per-system free-energy decomposition
+
+    ΔF = F_trans + F_conf + F_bond + F_rot
+
+per the senior's S1-S23 framework, using chain_coords.npz inputs from
+system_inputs.py and formulas from free_energy_terms.py. Then for each
+of the three pair comparisons (flex−rigid, semi−rigid, semi−flex)
+computes ΔΔF_term and ΔΔF_sum, and compares against the target ΔΔF.
+
+With --bootstrap, resamples frames per system independently and reports
+mean ± σ for every ΔΔF term. Use --n-jobs 8 for parallel.
+"""
+
+
 def main():
+    print(_BANNER)
     parser = argparse.ArgumentParser()
     parser.add_argument("--bootstrap", action="store_true",
                         help="Run frame-level bootstrap and report per-term σ.")
@@ -242,7 +264,7 @@ def main():
 
     # ---- save npz + markdown ----
     root = Path(__file__).resolve().parent.parent
-    out_npz = root / "results" / "phd_closure.npz"
+    out_npz = root / "results" / "closure_four_term.npz"
     payload = {}
     for label in LABELS:
         for k, v in per_sys[label].items():
@@ -270,10 +292,10 @@ def main():
     np.savez(out_npz, **payload)
     print(f"\nSaved {out_npz.relative_to(root)}.")
 
-    # `phd_closure.md` is a curated write-up — don't auto-overwrite it.
-    # The latest numeric tables go into `phd_closure_data.md` for diffing
+    # `closure_four_term.md` is a curated write-up — don't auto-overwrite it.
+    # The latest numeric tables go into `closure_four_term_data.md` for diffing
     # against the curated narrative.
-    out_md = root / "results" / "phd_closure_data.md"
+    out_md = root / "results" / "closure_four_term_data.md"
     with open(out_md, "w") as fp:
         fp.write("# ΔΔF closure via the PhD's S1-S23 framework\n\n")
         fp.write("Each pair value is per R-L pair, in k_B T.\n\n")

@@ -220,7 +220,7 @@ def _raw_predictions():
 
 
 def _old_prediction():
-    d = np.load(ROOT / "results" / "phd_closure.npz", allow_pickle=True)
+    d = np.load(ROOT / "results" / "closure_four_term.npz", allow_pickle=True)
     names = [str(x).replace("−", "-") for x in d["pair_names"]]
     values = dict(zip(names, d["pair_ddF_sum"]))
     return np.array([
@@ -288,7 +288,7 @@ def fig_closure_comparison():
               "Numbers above bars\nare prediction-target gaps.",
               fontsize=9.5, color=COLORS["muted"], linespacing=1.25)
 
-    out = FIG_DIR / "raw_vs_phd_closure.png"
+    out = FIG_DIR / "raw_vs_closure_four_term.png"
     fig.savefig(out, dpi=150)
     plt.close(fig)
     print(f"wrote {out.relative_to(ROOT)}")

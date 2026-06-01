@@ -43,10 +43,10 @@ from pathlib import Path
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).parent))
-from phd_inputs import (  # noqa: E402
+from system_inputs import (  # noqa: E402
     load_all, load_all_raw, system_inputs_from_arrays, AREA, B,
 )
-from phd_formula import F_trans, F_rot  # noqa: E402
+from free_energy_terms import F_trans, F_rot  # noqa: E402
 from xi_rl_candidates import LP_PHD  # noqa: E402
 
 TARGETS = {"flex−rigid": +3.56, "semi−rigid": +2.68, "semi−flex": -0.90}
@@ -188,7 +188,29 @@ def bootstrap_closure_s25(raw_by_label: dict, n_bootstrap: int, seed: int,
     return {"pair": pair_acc, "per_system": sys_acc}
 
 
+_BANNER = """
+╔════════════════════════════════════════════════════════════════════╗
+║  closure_wlc_three_term.py — trans + rot + Marko-Siggia WLC       ║
+╚════════════════════════════════════════════════════════════════════╝
+
+PURPOSE
+─────────
+The senior's PPT slide 25 three-term closure — drops the S17 end-volume
+term and replaces the Gaussian S4 conformational term with the
+Marko-Siggia integrated WLC stretching free energy.
+
+Parameters
+  L_c  : nominal ecto contour (default 12 nm = 12 protein bonds × 1.0 σ)
+  l_p  : persistence length from xi_rl_candidates.LP_PHD (84.6, 8.18, 1.14 nm)
+  D    : bound-chain z-reach from system_inputs.D_bound
+
+With --bootstrap, resamples frames per system and reports σ on each
+ΔΔF term. Use --n-jobs 8 for parallel.
+"""
+
+
 def main():
+    print(_BANNER)
     parser = argparse.ArgumentParser()
     parser.add_argument("--bootstrap", action="store_true")
     parser.add_argument("--n-bootstrap", type=int, default=200)
@@ -246,7 +268,7 @@ def main():
 
     # ---- save ----
     root = Path(__file__).resolve().parent.parent
-    out_npz = root / "results" / "phd_closure_s25.npz"
+    out_npz = root / "results" / "closure_wlc_three_term.npz"
     payload = {"L_c_nm": args.L_c}
     for label in LABELS:
         for k, v in per_sys[label].items():
@@ -268,7 +290,7 @@ def main():
     np.savez(out_npz, **payload)
     print(f"\nSaved {out_npz.relative_to(root)}.")
 
-    out_md = root / "results" / "phd_closure_s25.md"
+    out_md = root / "results" / "closure_wlc_three_term.md"
     with open(out_md, "w") as fp:
         fp.write("# Closure 5 — PhD PPT s25 (trans + rot + WLC)\n\n")
         fp.write("Reimplements the PhD's PPT slide 25 three-term closure "

@@ -28,10 +28,10 @@ PURPOSE
 Walks ../*/s### (your MD replicas), extracts chain_coords per replica,
 merges them per system, then runs:
 
-  1. phd_closure.py --bootstrap         (S1-S23 4-term decomposition)
-  2. phd_closure_s25.py --bootstrap     (3-term WLC closure)
+  1. closure_four_term.py --bootstrap         (S1-S23 4-term decomposition)
+  2. closure_wlc_three_term.py --bootstrap     (3-term WLC closure)
   3. raw_tether_partition_k2d.py        (ab initio K2D)
-  4. diagnose_rigid_sample_bias.py      (bound vs unbound geometry)
+  4. diagnose_bound_vs_unbound.py      (bound vs unbound geometry)
   5. reconcile_methods.py               (5-method ΔΔF consensus)
 
 All outputs go to distilled/ (≈ 5 MB total). Send distilled/ back via
@@ -65,8 +65,8 @@ DISTILLED="$BUNDLE_ROOT/distilled"
 LOG="$DISTILLED/run_log.txt"
 mkdir -p "$EXTRACTED_DIR" "$MERGED_DIR" "$DISTILLED"
 
-# phd_closure uses merged chain_coords (covers all replicas).
-# raw_tether_partition_k2d and diagnose_rigid_sample_bias read raw traj.xyz
+# closure_four_term uses merged chain_coords (covers all replicas).
+# raw_tether_partition_k2d and diagnose_bound_vs_unbound read raw traj.xyz
 # directly from `<bundle_root>/outputs/<system>/s001/` — point that at the
 # real MD parent dir so they find senior's first-replica data.
 if [[ ! -e "$BUNDLE_ROOT/outputs" ]]; then
@@ -138,17 +138,17 @@ cd "$BUNDLE_ROOT"
 
 # Analyses
 echo
-echo "--- phd_closure (S1-S23 four-term) ---"
+echo "--- closure_four_term (S1-S23 four-term) ---"
 cd "$BUNDLE_ROOT/src"
-python -u phd_closure.py --bootstrap --n-bootstrap "$N_BOOTSTRAP" --n-jobs "$N_JOBS" \
-    || echo "WARN: phd_closure failed"
+python -u closure_four_term.py --bootstrap --n-bootstrap "$N_BOOTSTRAP" --n-jobs "$N_JOBS" \
+    || echo "WARN: closure_four_term failed"
 cd "$BUNDLE_ROOT"
 
 echo
-echo "--- phd_closure_s25 (3-term WLC) ---"
+echo "--- closure_wlc_three_term (3-term WLC) ---"
 cd "$BUNDLE_ROOT/src"
-python -u phd_closure_s25.py --bootstrap --n-bootstrap "$N_BOOTSTRAP" --n-jobs "$N_JOBS" \
-    || echo "WARN: phd_closure_s25 failed"
+python -u closure_wlc_three_term.py --bootstrap --n-bootstrap "$N_BOOTSTRAP" --n-jobs "$N_JOBS" \
+    || echo "WARN: closure_wlc_three_term failed"
 cd "$BUNDLE_ROOT"
 
 echo
@@ -161,7 +161,7 @@ cd "$BUNDLE_ROOT"
 echo
 echo "--- diagnose bound vs unbound bias ---"
 cd "$BUNDLE_ROOT/src"
-python -u diagnose_rigid_sample_bias.py > "$DISTILLED/diagnose_bias.txt" 2>&1 \
+python -u diagnose_bound_vs_unbound.py > "$DISTILLED/diagnose_bias.txt" 2>&1 \
     || echo "WARN: diagnose failed"
 cd "$BUNDLE_ROOT"
 
@@ -175,10 +175,10 @@ cd "$BUNDLE_ROOT"
 echo
 echo "--- distill outputs ---"
 for f in \
-    "$BUNDLE_ROOT/results/phd_closure.npz" \
-    "$BUNDLE_ROOT/results/phd_closure_data.md" \
-    "$BUNDLE_ROOT/results/phd_closure_s25.npz" \
-    "$BUNDLE_ROOT/results/phd_closure_s25.md" \
+    "$BUNDLE_ROOT/results/closure_four_term.npz" \
+    "$BUNDLE_ROOT/results/closure_four_term_data.md" \
+    "$BUNDLE_ROOT/results/closure_wlc_three_term.npz" \
+    "$BUNDLE_ROOT/results/closure_wlc_three_term.md" \
     "$BUNDLE_ROOT/results/raw_tether_partition.npz" \
     "$BUNDLE_ROOT/results/raw_tether_partition.md" \
     "$BUNDLE_ROOT/results/method_reconciliation.md" \

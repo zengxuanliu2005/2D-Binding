@@ -1,93 +1,159 @@
-# cluster/ — workflow for cluster-side runs
+# cluster/ — what to ship to senior + what to run on cluster-A
 
-This folder mirrors what runs on the group cluster (`master`, repo path
-`/mnt/nfs/ugstu/liuzx/2D-Binding`). Local `scripts/` is for s001 single-replica
-analysis; cluster `scripts/` is for multi-replica extract + slab MD pipelines.
+This folder is **both** the validation harness we run on cluster-A
+AND the tarball we ship to senior.
 
-## Two pipelines
+```
+                  ┌──────────────────────────────────────────┐
+                  │  cluster/                                │
+                  │  ├── trial/      ← user runs this on     │
+                  │  │                  cluster-A             │
+                  │  └── (everything else) ← senior runs     │
+                  │                          this on her server│
+                  └──────────────────────────────────────────┘
+```
 
-| § | what | files | scope |
-|---|---|---|---|
-| **§0** | data-volume test — extract chain_coords from ALL replicas to test the "100× data closes A1/B1 gaps" hypothesis | `scripts/explore_replicas.sh`, `extract_one_replica.py`, `merge_chain_coords.py`; `slurm/array_extract.slurm`; `analysis/run_section0_full.sh` | first, cheapest |
-| **C** | constrained-h slab MD — 3 systems × 6 h values, fixed membrane gap, no R-L binding, directly measure K2D(l) | `scripts/nvt-md-constrained-h.py`, `analyze_slab_traj.py`; `slurm/array_slab_md.slurm`, `single_pilot.slurm`; `analysis/run_slab_full.sh` | only if §0 doesn't close the gap |
+## Top-level layout
 
-## Login + first-time setup
+```
+cluster/
+├── README.md                       ← you are here
+├── README_for_senior_zh.md         ← what senior reads first
+├── requirements.txt
+├── run_analysis.sh                 ← senior's main entry point
+├── env_setup/
+│   ├── check_env.sh
+│   └── install_phys.sh
+├── slurm/
+│   ├── _base.slurm
+│   ├── single_pilot.slurm
+│   ├── array_extract.slurm
+│   └── array_slab_md.slurm
+├── scripts/                        ← all analysis modules + utilities
+│   ├── (utility)    topology.py io_xyz.py bonds.py features.py bat.py
+│   │                extract_complex.py xi_rl_candidates.py
+│   ├── (extract)    extract_chain_coords.py extract_one_replica.py
+│   │                extract_parallel.py merge_chain_coords.py
+│   │                explore_replicas.sh
+│   ├── (renamed)    system_inputs.py  free_energy_terms.py
+│   │                closure_four_term.py  closure_wlc_three_term.py
+│   ├── (analysis)   raw_tether_partition_k2d.py  reconcile_methods.py
+│   │                diagnose_bound_vs_unbound.py
+│   └── (slab MD)    nvt-md-constrained-h.py  analyze_slab_traj.py
+├── analysis/                       ← orchestrator shell wrappers
+│   ├── run_section0_full.sh
+│   ├── run_slab_full.sh
+│   └── expected_output_layout.md
+├── corrections/README.md
+├── outputs/                        ← senior's raw outputs land here
+│   └── README.md                     (synced back from her server)
+├── results/                        ← Claude's senior-side analysis
+│   └── README.md
+└── trial/                          ← user's validation harness
+    ├── README.md
+    ├── 01_env_check.sh ~ 04_extract_pilot.sh
+    ├── outputs/                    ← user pastes trial .out here
+    │   └── README.md
+    └── results/                    ← Claude's trial-side diagnosis
+        └── README.md
+```
+
+## Two double-loops (user-side + senior-side)
+
+### Loop A — user runs trial on cluster-A, Claude fixes scripts
+
+```
+User                                            Claude (laptop)
+─────                                           ─────────────
+1. ssh master, git pull
+2. bash cluster/trial/01..04.sh
+3. cluster/trial/outputs/<date>_round<N>/
+   ← .out files
+4. git add + commit + push   ──────────────►   git pull
+                                                 5. read trial/outputs/
+                                                 6. write trial/results/<date>_round<N>_diagnosis.md
+                                                 7. patch cluster/scripts/*
+                                                 8. git commit + push
+9. git pull                  ◄──────────────
+10. rerun trial 03/04
+... repeat until verdict.md says PASS
+```
+
+### Loop B — senior runs cluster/ on her server, Claude analyzes
+
+```
+User                            Senior                              Claude
+─────                           ──────                              ──────
+1. tar czf cluster.tgz                                              
+   (excluding trial/)                                                
+2. WeChat / email ──────────►   3. unpack on her server             
+                                4. bash cluster/run_analysis.sh    
+                                5. send distilled.tgz back ────────► (via user)
+                                                                      6. user unpacks to
+                                                                         cluster/outputs/<date>_round<N>/
+7. git add + commit + push  ───────────────────────────────────────► git pull
+                                                                      8. read cluster/outputs/
+                                                                      9. write cluster/results/<date>_round<N>_analysis.md
+                                                                      10. write verdict.md if §0 closed
+                                                                      
+                                                                      OR
+                                                                      
+                                                                      11. write next question for senior
+12. user forwards question to senior ───────────────────────────────►
+... repeat
+```
+
+## How to use
+
+### As user, on cluster-A (Loop A)
 
 ```bash
 ssh master
 cd /mnt/nfs/ugstu/liuzx/2D-Binding
-bash cluster/env_setup/check_env.sh
+git pull
+bash cluster/trial/01_env_check.sh    > cluster/trial/outputs/$(date -I)_round1/01_env_check.out 2>&1
+# (repeat for 02-04, then git commit + push)
 ```
 
-Expected: phys env activates, pygamd imports, /mnt/nfs/ugstu/liuzx has disk.
-If pygamd missing → `bash cluster/env_setup/install_phys.sh` (TODO: fill in once we know what's there).
-
-## §0 workflow — full
+### As user, to ship to senior (after trial pass)
 
 ```bash
-# 1. Inventory replicas per system (< 1 min)
-bash cluster/scripts/explore_replicas.sh
-cat cluster/results/section0/inventory.tsv
-
-# 2. Pilot extract (1 system × 2 replicas, < 5 min on 1 GPU node)
-SYS=15_120x120_K100_EPS05 sbatch --array=1-2 cluster/slurm/array_extract.slurm
-
-# 3. Verify pilot output then production array
-# (edit array range in slurm file to match inventory; one sbatch per system)
-SYS=15_120x120_K100_EPS05 sbatch cluster/slurm/array_extract.slurm
-SYS=15_120x120_K10_EPS05  sbatch cluster/slurm/array_extract.slurm
-SYS=22_120x120_K01_EPS05  sbatch cluster/slurm/array_extract.slurm
-
-# 4. Wait for completion, then merge
-python cluster/scripts/merge_chain_coords.py --n-jobs 3
-
-# 5. rsync merged npz back to local laptop
-rsync -av master:/mnt/nfs/ugstu/liuzx/2D-Binding/cluster/results/section0/merged_chain_coords/ \
-      results/chain_coords_full/
-
-# 6. Locally rerun analysis on full data
-python scripts/phd_closure.py --bootstrap --n-bootstrap 200 --n-jobs 8 \
-       --inputs-root results/chain_coords_full
-# Same for phd_closure_s25.py, raw_tether_partition_k2d.py, diagnose_rigid_sample_bias.py
+tar czf cluster-for-senior.tgz --exclude=cluster/trial cluster/
+# send via WeChat / email
 ```
 
-## C workflow — full
+### As senior
 
-```bash
-# 1. Pilot one (system, h) job; verify z-tether constraint is enforced and bond count = 0
-sbatch cluster/slurm/single_pilot.slurm
-# Check log: ⟨z_membrane⟩ ≈ h, bond_count = 0 throughout
+See `cluster/README_for_senior_zh.md` (中文).
 
-# 2. If pilot OK, production array (3 systems × 6 h values = 18 tasks)
-sbatch cluster/slurm/array_slab_md.slurm
+## Naming convention
 
-# 3. Analyze
-python cluster/scripts/analyze_slab_traj.py --n-jobs 8
-# Writes cluster/results/slab/K2D_l_grid.npz
+All file names follow purpose-based naming. There is no `phd_*` prefix
+(historical references to senior's PPT — removed). Renamed files:
 
-# 4. Sync back to local
-rsync -av master:.../cluster/results/slab/ results/slab/
-```
+| old | new |
+|---|---|
+| `phd_inputs.py` | `system_inputs.py` |
+| `phd_formula.py` | `free_energy_terms.py` |
+| `phd_closure.py` | `closure_four_term.py` |
+| `phd_closure_s25.py` | `closure_wlc_three_term.py` |
+| `diagnose_rigid_sample_bias.py` | `diagnose_bound_vs_unbound.py` |
 
 ## Pilot discipline
 
-Every script in this folder supports `--pilot` (smaller input, < 60s wall, asserts sanity invariant). Cluster wall time is too expensive to run blind. Always:
+Every script supports `--pilot` (smaller input, < 60s, asserts a sanity
+invariant). Always pilot before production:
 
-1. Run script locally with `--pilot` (if data deps allow)
-2. Submit `single_pilot.slurm` on cluster (validates SBATCH template)
+1. Locally with `--pilot` if data deps allow
+2. On cluster with `cluster/slurm/single_pilot.slurm` to validate template
 3. Then production array
 
-## Sync strategy
+## TODOs awaiting cluster-A trial results
 
-- `cluster/outputs/` is gitignored (each MD job is several GB)
-- `cluster/results/section0/merged_chain_coords/` is gitignored (~100 MB per system)
-- Distilled tables (inventory.tsv, K2D_l_grid.npz) go into git
-- Use rsync to pull distilled results back to laptop for `scripts/` analysis
-
-## TODOs (await senior or first cluster login)
+Filled in by Round 1 of Loop A above:
 
 - [ ] confirm cluster path to MD output replicas (currently assumed `/mnt/nfs/ugstu/liuzx/2D-Binding-MD/`)
-- [ ] confirm conda env `phys` exists with pygamd installed (test with `check_env.sh`)
-- [ ] confirm pygamd API for z-tether harmonic constraint (likely `pygamd.force` module — verify on cluster)
-- [ ] confirm SLURM wall time for MD jobs (senior said "no need to set" but cluster default may be tight)
-- [ ] decide array-task → (system, h) mapping format for `array_slab_md.slurm`
+- [ ] confirm conda env `phys` exists with pygamd installed
+- [ ] confirm pygamd API for z-tether harmonic constraint
+- [ ] confirm SLURM wall time for MD jobs
+- [ ] decide array-task → (system, h) mapping for `array_slab_md.slurm`

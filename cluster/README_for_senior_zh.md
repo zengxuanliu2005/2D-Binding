@@ -4,7 +4,7 @@
 >
 > 学姐你好！这是一个自包含的分析包，把它解压到你 MD 数据所在的根目录就能跑。
 > 它会扫描所有 `<体系>/s001`, `<体系>/s002`, ... 续跑文件夹，把每个 replica 的 chain
-> 坐标抽出来 → 全部 concat 起来 → 跑 4 个分析（phd_closure 四项分解、phd_closure_s25
+> 坐标抽出来 → 全部 concat 起来 → 跑 4 个分析（closure_four_term 四项分解、closure_wlc_three_term
 > 三项 WLC、raw_tether_partition K2D、diagnose bound vs unbound 偏倚）→ 输出 distilled
 > 表格 (~10 MB)。你只需要把 `distilled/` 整个发回给 Zengxuan 就行，不用传 GB 级的中
 > 间 npz。
@@ -68,8 +68,8 @@ bash run_full_analysis.sh --pilot
 ```
 distilled/
 ├── inventory.tsv                   # 每个体系实际找到几个 replicas、总帧数
-├── phd_closure.md + .npz           # 四项 ΔΔF 分解 + bootstrap σ
-├── phd_closure_s25.md + .npz       # 三项 WLC + bootstrap σ
+├── closure_four_term.md + .npz           # 四项 ΔΔF 分解 + bootstrap σ
+├── closure_wlc_three_term.md + .npz       # 三项 WLC + bootstrap σ
 ├── raw_tether_partition.md + .npz  # rigid 绝对 K2D + bootstrap
 ├── diagnose_bias.md                # bound vs unbound 几何对比表
 └── reconcile_methods.md            # 5 方法 ΔΔF 汇总

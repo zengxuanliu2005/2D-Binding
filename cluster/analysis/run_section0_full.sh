@@ -12,7 +12,7 @@
 #    4. scripts/merge_chain_coords.py  — concat → merged npz per system
 #
 #  After this finishes, rsync cluster/results/section0/merged_chain_coords/
-#  back to laptop and run phd_closure / phd_closure_s25 / raw_tether against
+#  back to laptop and run closure_four_term / closure_wlc_three_term / raw_tether against
 #  the merged data to test the "data volume" hypothesis.
 #
 #  Failure tolerance: each step exits non-zero on failure; subsequent steps
@@ -91,11 +91,11 @@ cat <<'EOF'
          results/chain_coords_full/
 
    Then locally:
-     for s in phd_closure phd_closure_s25 raw_tether_partition_k2d; do
+     for s in closure_four_term closure_wlc_three_term raw_tether_partition_k2d; do
          python scripts/$s.py --bootstrap --n-bootstrap 200 --n-jobs 8 \
              --inputs-root results/chain_coords_full
      done
-     python scripts/diagnose_rigid_sample_bias.py
+     python scripts/diagnose_bound_vs_unbound.py
 
    Compare numbers vs current results/ — if they converge to PPT s25 or
    target K2D, the "data volume" hypothesis is confirmed.

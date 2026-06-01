@@ -1,7 +1,20 @@
-# MD job outputs land here at runtime — keep out of git
-outputs/
-# logs from SLURM live with outputs
+# cluster/.gitignore — keep IO loop data slim
+#
+# Strategy: ignore large raw MD outputs (GB-scale traj.xyz, intermediate npz,
+# SLURM logs) but track the small distilled outputs that go through the
+# double-loop with Claude (senior's results, trial outputs).
+
+# SLURM-side raw outputs from cluster jobs
+outputs/extracted/
+outputs/slab/
+outputs/slab_pilot/
+outputs/logs/
 *.log
 *.err
-# extracted intermediate npz, can be huge
+
+# Intermediate per-system merged npz can be ~100 MB; keep out
 results/section0/merged_chain_coords/
+
+# Pilot scratch (anything matching *_pilot/ at any depth)
+**/_pilot/
+**/pilot_*/

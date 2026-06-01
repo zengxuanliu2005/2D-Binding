@@ -503,7 +503,31 @@ def write_report(
         fp.write("\n```\n")
 
 
+_BANNER = """
+╔════════════════════════════════════════════════════════════════════╗
+║  raw_tether_partition_k2d.py — ab initio K2D from MD              ║
+╚════════════════════════════════════════════════════════════════════╝
+
+PURPOSE
+─────────
+Reads outputs/<system>/s001/traj.xyz directly and integrates the
+soft-Boltzmann binding kernel over the lateral R-L bond-vector disk
+for each trial membrane separation h. Outputs:
+
+    K2D_eff(h) = (1/N_pairs) · Σ π·r_xy_max² · ⟨exp(-U_eff/kBT) - 1⟩
+    K2D,max    = max over h
+    ΔΔF(pair)  = -ln(K2D,a / K2D,b)
+
+No fitting to (ξ⊥, K2D) data — this is the ab initio prediction.
+
+With --bootstrap, resamples frames per system (each independently) and
+reports σ on K2D,max + ΔΔF. Use --n-jobs 8 for parallel.
+Use --systems rigid (or comma-list) to run only a subset.
+"""
+
+
 def main(argv: list[str]) -> int:
+    print(_BANNER)
     parser = argparse.ArgumentParser()
     parser.add_argument("--sample-pairs", type=int, default=200_000)
     parser.add_argument("--bond-samples", type=int, default=24)
