@@ -371,7 +371,7 @@ def main(argv: list[str] | None = None) -> int:
             k = by_sys.get(s, {}).get("K2D", float("nan"))
             if not (np.isfinite(k) and k > 0):
                 fails.append(f"{s} K2D non-finite: {k}")
-        # Magnitude sanity vs target K2D,max from senior PPT
+        # Magnitude sanity vs target K2D,max from the off-site run PPT
         target = {"K100": 12705, "K10": 875, "K01": 362}
         for s, expected in target.items():
             k = by_sys.get(s, {}).get("K2D", 0)

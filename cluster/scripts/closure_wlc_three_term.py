@@ -195,7 +195,7 @@ _BANNER = """
 
 PURPOSE
 ─────────
-The senior's PPT slide 25 three-term closure — drops the S17 end-volume
+The the source PPT slide 25 three-term closure — drops the S17 end-volume
 term and replaces the Gaussian S4 conformational term with the
 Marko-Siggia integrated WLC stretching free energy.
 

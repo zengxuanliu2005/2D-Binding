@@ -1,40 +1,37 @@
 #!/bin/bash
 ###############################################################################
-#  cluster/trial/slurm/compute_node_check.slurm
-#  Validates the COMPUTE node's environment (different from login node!)
+#  cluster/trial/05_compute_node_check.slurm
+#  Trial step 5 — validates the COMPUTE node's environment via SBATCH.
 ###############################################################################
 #
 #  WHY THIS IS NECESSARY
 #  ---------------------
-#  Login-node `bash cluster/trial/01..04.sh` already passed (or was close to
-#  passing) for the login-node env. But the actual production workloads
-#  (`array_extract.slurm`, `array_slab_md.slurm`) run on COMPUTE nodes, which
-#  on this cluster can differ from the login node in:
+#  Login-node `bash cluster/trial/01..04.sh` validates the login-node env.
+#  But the actual production workloads (`array_extract.slurm`,
+#  `array_slab_md.slurm`) run on COMPUTE nodes, which on some clusters
+#  can differ from the login node in:
 #
 #    - whether `/opt/miniconda3` or `~/miniconda3` is reachable
 #    - whether NFS-mounted user $HOME and /mnt/nfs/ugstu/liuzx are mounted
 #    - whether the conda base env (which provides numpy/scipy/...) is the
-#      same on compute as it is on login (it should be if /opt/miniconda3
-#      is shared, but worth confirming)
-#    - whether `cu_gala` / `poetry` is installed in the compute env (this is
-#      where it actually matters for Workstream C — login node MD jobs would
-#      never run there anyway)
+#      same on compute as it is on login
+#    - whether `cu_gala` / `poetry` is installed in the compute env (this
+#      matters for Workstream C — login node MD jobs would never run there)
 #
-#  This SBATCH script re-runs the same checks as trial 01 + 03 + 04 but on a
-#  compute node, so we can compare login vs compute and patch anything that
-#  diverges.
+#  This SBATCH script re-runs the same checks as trial 01 + 03 + 04 but on
+#  a compute node, so we can compare login vs compute and patch anything
+#  that diverges.
 #
 #  HOW TO SUBMIT
 #  -------------
-#      cd /mnt/nfs/ugstu/liuzx/2D-Binding-main
-#      mkdir -p cluster/trial/outputs/$(date -I)_round2/compute
-#      # SBATCH -o needs to be set at submit time because cwd-relative path:
-#      sbatch -o cluster/trial/outputs/$(date -I)_round2/compute/%J.out \
-#             -e cluster/trial/outputs/$(date -I)_round2/compute/%J.err \
-#             cluster/trial/slurm/compute_node_check.slurm
+#      cd /path/to/2D-Binding
+#      mkdir -p cluster/trial/outputs/$(date -I)_round<N>/compute
+#      sbatch -o cluster/trial/outputs/$(date -I)_round<N>/compute/%J.out \
+#             -e cluster/trial/outputs/$(date -I)_round<N>/compute/%J.err \
+#             cluster/trial/05_compute_node_check.slurm
 #
-#      # wait for it to finish, then move the latest output file into
-#      # the round dir (or just keep where it is — naming with %J is fine)
+#      # wait for it to finish; the resulting %J.out/.err files stay in
+#      # the round dir, ready for Claude's diagnosis.
 #
 ###############################################################################
 
@@ -234,7 +231,7 @@ if [[ "$FAILED" -eq 0 ]]; then
    → Production array jobs (cluster/slurm/array_extract.slurm) will work.
 
    Next steps:
-     • If trial 01 (login-node Round 2) also passed → ship to senior
+     • If trial 01 (login-node Round 2) also passed → pack for off-site run
      • And/or run bash cluster/run_analysis.sh on user's own 7 replicas
 EOF
 else
@@ -247,7 +244,7 @@ else
      • /mnt/nfs/ugstu/liuzx mounted on login but not compute node
        → tell admin to mount it everywhere
      • cu_gala installed in some other env not yet discovered
-       → ask senior for the exact env / module she uses to run MD
+       → ask off-site collaborator for the exact env / module she uses to run MD
 
    Send this log + the login-node Round 2 log to Claude — patch will follow.
 EOF

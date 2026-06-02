@@ -12,13 +12,13 @@ agent_read_when:
   - need to know the open_questions of this derivation step
 ---
 
-> **Loop 2 revision protocol**: see `log/decisions/007_loop2_b_revision_playbook.md` for the explicit decision tree mapping senior-data observations → which Q here gets closed / refined and which calibration row to flip.
+> **Loop 2 revision protocol**: see `log/decisions/007_loop2_b_revision_playbook.md` for the explicit decision tree mapping off-site data observations → which Q here gets closed / refined and which calibration row to flip.
 
 # 05_open_questions — What B2.1 left unsolved
 
-## Q1 — Ecto vs full chain Lc disagreement with senior's PPT Re
+## Q1 — Ecto vs full chain Lc disagreement with the source PPT Re
 
-**Symptom**. MC √⟨R²⟩ undershoots the senior's PPT slide-16 Re by 17–21 %
+**Symptom**. MC √⟨R²⟩ undershoots the the source PPT slide-16 Re by 17–21 %
 for rigid and semi (table 3.3). Repeating MC with Lc = 25 nm (full chain)
 overshoots for rigid/semi. Neither convention matches her published Re
 exactly.
@@ -28,14 +28,14 @@ is set by Lc/lp. If we use the wrong Lc we get a shifted K2D(l) peak
 position and an off-target ξ_RL prediction in derivation/04.
 
 **To resolve**.
-- Ask senior in the next WeChat round (after the cluster bundle round): what
+- Ask off-site collaborator in the next WeChat round (after the cluster bundle round): what
   exactly is Re,unbound on PPT slide 16 — full chain, ecto only, or something
   else? Per which atom pair?
 - Once known, set the matching Lc in `k2d_l_wlc_theory.py` (config
   `DEFAULT_LC_NM`).
 
 Until resolved, downstream derivations (02, 03, 04) use Lc = 12 nm to
-match the senior's S1-S23 framework documented in CLAUDE.md.
+match the the off-site S1-S23 framework documented in CLAUDE.md.
 
 ## Q2 — Bond stretching of HARM bonds
 
@@ -103,5 +103,5 @@ The three acceptance criteria in 00_intent.md:
 3. **Numerical convergence ≤ 3 %** — ✓ informal; Q4 to formalise.
 
 So criterion 2 is the one tagged unresolved. Derivation 02 will inherit
-the same Lc = 12 nm convention; if senior comes back with a different
+the same Lc = 12 nm convention; if off-site collaborator comes back with a different
 Lc, we rerun 01 and 02 trivially.

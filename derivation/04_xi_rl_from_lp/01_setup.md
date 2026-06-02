@@ -78,7 +78,7 @@ curvature in kBT units).
 
 ## Measured predictor
 
-Senior's fit (essay §4.4) of K2D(ξ⊥) to a Gaussian gives
+The fit (essay §4.4) of K2D(ξ⊥) to a Gaussian gives
 
   ξ_RL^(measured) = 0.685 / 2.076 / 2.253 nm     (rigid / semi / flex)
 

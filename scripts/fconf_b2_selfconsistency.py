@@ -11,7 +11,7 @@ Then computes the cross-system pair table
     ΔΔF_conf(A-B) = F_conf^(A)(D_A) - F_conf^(B)(D_B)         (B2.5 eq 1.2)
 
 and compares against Marko-Siggia integrated WLC (Closure 5 / B1) and
-PPT slide 25 numbers from the senior. Bootstrap σ via frame-resample of
+PPT slide 25 numbers from the off-site collaborator. Bootstrap σ via frame-resample of
 the z_lab arrays (n_boot = 200).
 
 DERIVATION → CODE MAP
@@ -66,7 +66,7 @@ DDF_CONF_B1 = {
 }
 
 # PPT s25 ΔΔF_sum (3-term closure result; F_conf part not separately
-# reported by senior). We display these for context only.
+# reported by off-site collaborator). We display these for context only.
 DDF_SUM_PPT_S25 = {
     "flex-rigid": +3.64,
     "semi-rigid": +2.47,

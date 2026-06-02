@@ -3,21 +3,21 @@ type: calibration
 status: open
 date: 2026-06-02
 last_updated: 2026-06-02
-summary: WLC √⟨R²⟩(MC) under-predicts senior's PPT slide-16 Re by 9-21% for rigid+semi; flex within 9%
+summary: WLC √⟨R²⟩(MC) under-predicts the source PPT slide-16 Re by 9-21% for rigid+semi; flex within 9%
 prediction_source: derivation/01_wlc_endpoint_distribution/ MC √⟨R²⟩
-measurement_source: senior PPT slide 16 Re,unbound = 14.76 / 11.65 / 5.66 nm
+measurement_source: off-site collaborator PPT slide 16 Re,unbound = 14.76 / 11.65 / 5.66 nm
 agreement_summary: rigid -21%, semi -17%, flex -9%; likely Lc convention mismatch
 next_check_when:
-  - senior replies on Lc convention used on PPT slide 16
+  - off-site collaborator replies on Lc convention used on PPT slide 16
   - we measure ⟨b⟩ effective bond length from chain_coords directly
 related_decisions: [001]
 agent_read_when:
   - working on B2.1 P(R) MC
   - investigating discrepancy with PPT Re values
-  - senior responds to user-question #C7-C8
+  - off-site collaborator responds to user-question #C7-C8
 ---
 
-# Calibration — B2.1 √⟨R²⟩(MC) vs senior PPT slide-16 Re,unbound
+# Calibration — B2.1 √⟨R²⟩(MC) vs off-site collaborator PPT slide-16 Re,unbound
 
 ## Running table (newest on top)
 
@@ -34,7 +34,7 @@ Two compatible explanations (no contradiction):
 1. **Ecto vs full chain Lc convention** (ADR 001). The PPT Re likely
    measures the FULL chain end-to-end (TM + ecto), Lc ≈ 24-25 nm. Rerunning
    B2.1 with Lc = 24 nm overshoots (rigid → 24 nm, semi → 19, flex → 6).
-   Suggests senior uses ecto for some quantities and full for others —
+   Suggests off-site collaborator uses ecto for some quantities and full for others —
    need her to clarify.
 
 2. **Bond stretching of HARM bonds**. HARM K=100 lets bonds stretch ~5 %
@@ -49,21 +49,21 @@ mapping itself shifts by ~10 %).
 
 | trigger | expected resolution |
 |---|---|
-| senior says Lc = 12 nm for PPT s16 Re | open Q on PPT Re's actual measurement (what bead pair?) |
-| senior says Lc = 25 nm (full chain) | rerun B2.1 with Lc = 25; expect overshoot, document |
-| senior says system-specific Lc | new ADR + per-system Lc parameter |
+| the off-site collaborator says Lc = 12 nm for PPT s16 Re | open Q on PPT Re's actual measurement (what bead pair?) |
+| the off-site collaborator says Lc = 25 nm (full chain) | rerun B2.1 with Lc = 25; expect overshoot, document |
+| the off-site collaborator says system-specific Lc | new ADR + per-system Lc parameter |
 | we measure ⟨b⟩ from chain_coords | sub-correction of ~5 % to all three √⟨R²⟩ values |
 
 ## Action triggers (per playbook log/decisions/007)
 
-When senior data arrives:
+When off-site full-data results arrives:
 
-- **On Lc clarification (senior tells us 12 / 25 / per-system)** →
+- **On Lc clarification (off-site collaborator tells us 12 / 25 / per-system)** →
   playbook S2: rerun `scripts/k2d_l_wlc_theory.py` with new
   `DEFAULT_LC_NM`; append row with new √⟨R²⟩ values; if per-system Lc,
   also append a new column.
 - **On full-data chain_coords with measured ⟨b⟩ bond length** → append
-  row "senior + measured b" with bond-stretching-corrected √⟨R²⟩.
+  row "off-site collaborator + measured b" with bond-stretching-corrected √⟨R²⟩.
 - **On both above resolved (Lc + ⟨b⟩)** → if measured √⟨R²⟩ within 5% of
-  senior PPT Re for all 3 systems: flip frontmatter `status: open →
+  off-site collaborator PPT Re for all 3 systems: flip frontmatter `status: open →
   resolved`; cross-reference round N analysis.

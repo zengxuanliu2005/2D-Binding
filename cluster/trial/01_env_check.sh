@@ -5,7 +5,7 @@
 #
 #  Purpose
 #  -------
-#  Before we ship the §0 data-volume bundle to senior or submit any
+#  Before we ship the §0 data-volume bundle to off-site collaborator or submit any
 #  constrained-h MD jobs on cluster-A, we need to know:
 #
 #    (a) Which conda installation lives on cluster-A and where its
@@ -50,7 +50,7 @@ cat <<'BAN'
 
 PURPOSE
 ─────────
-Before we ship the §0 data-volume bundle to senior or submit any
+Before we ship the §0 data-volume bundle to off-site collaborator or submit any
 constrained-h MD jobs, we need to know:
 
   (a) Which conda installation lives on cluster-A (so SLURM templates
@@ -100,7 +100,7 @@ for prefix in /opt/miniconda3 ~/miniconda3 /opt/anaconda3 ~/anaconda3 /usr/local
 done
 if [[ -z "$CONDA_SH" ]]; then
     fail "could not find conda.sh under /opt/miniconda3, ~/miniconda3, /opt/anaconda3 ..."
-    warn "tell Claude the actual path so cluster/slurm/*.slurm can be fixed."
+    warn "report the actual path so cluster/slurm/*.slurm can be fixed."
 fi
 
 # ── step 3: verify analysis stack imports ────────────────────────────────────
@@ -142,7 +142,7 @@ if command -v sbatch >/dev/null 2>&1; then
     sinfo -h -o "     %P   nodes=%D   state=%t" 2>&1 | head -10
     # 'gpu*' has a trailing star (marks the default partition); accept either.
     if sinfo -h -o "%P" 2>/dev/null | grep -qE '^gpu\*?$'; then
-        ok "'gpu' partition exists — matches senior's analysis/analysis.slurm"
+        ok "'gpu' partition exists — matches the off-site analysis/analysis.slurm"
     else
         warn "no 'gpu' partition? cluster/slurm/_base.slurm needs adjusting"
     fi
@@ -159,7 +159,7 @@ if [[ "$FAILED" -eq 0 ]]; then
     cat <<'EOF'
    ✓✓✓  ALL CHECKS PASSED.  Proceed to 02_paths_check.sh.
 
-   Tell Claude:
+   Report:
      • the CONDA_SH path printed in Step 2 (the source line for SLURM)
      • whether analysis packages all imported in Step 3
      • whether sbatch responds and `gpu` is a partition
@@ -170,7 +170,7 @@ else
 
    Common fixes:
      • analysis package missing → pip install numpy scipy pandas matplotlib scikit-learn
-     • conda.sh not in /opt/miniconda3 or ~/miniconda3 → tell Claude actual path
+     • conda.sh not in /opt/miniconda3 or ~/miniconda3 → report actual path
      • sbatch missing → ssh to a compute node? or wrong cluster?
 
    Send the full output to Claude regardless.

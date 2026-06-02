@@ -89,13 +89,13 @@ git commit -m "trial: round 2 outputs (login + compute node)"
 git push
 ```
 
-## Step 5 (async) — WeChat senior about cu_gala
+## Step 5 (async) — WeChat off-site collaborator about cu_gala
 
 Login-node trial 03 confirmed `cu_gala` not present in cluster `base`. The
 compute-node trial 04 will tell us if it's anywhere else. Independent of
-that, please send senior:
+that, please send off-site collaborator:
 
-> 学姐，cluster master 上 base env 里没有 pygamd 也没有 cu_gala
+> 外部协作者，cluster master 上 base env 里没有 pygamd 也没有 cu_gala
 > （`from poetry import cu_gala` 也 fail）。你 `ref/nvt-md.py` 里用的
 > 是 `from poetry import cu_gala as gala` —— 你之前是怎么装的？是装在
 > 某个专门的 conda env 里，还是有自定义的 python path？我下一步要在
@@ -107,7 +107,7 @@ that, please send senior:
 
 `02_paths_check` (Round 1) showed **you have 7 replicas of your own**
 (K100×2 + K10×2 + K01×3), not just s001. Once Round 2 is green you can run
-a mini §0 data-volume test on YOUR data, **without waiting for senior**:
+a mini §0 data-volume test on YOUR data, **without waiting for off-site full-data run**:
 
 ```bash
 bash cluster/run_analysis.sh --pilot   # 2 reps/system, ~5 min sanity
@@ -118,4 +118,4 @@ git push
 ```
 
 If just K100/K10 doubling (1 → 2 replicas) already nudges ΔΔF toward PPT
-s25 numbers, that's an early signal — saves a week of waiting for senior.
+s25 numbers, that's an early signal — saves a week of waiting for off-site full-data run.

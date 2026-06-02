@@ -4,7 +4,7 @@
 #
 #  PURPOSE
 #  -------
-#  Mirrors analysis/analysis.slurm (confirmed by senior 2026-06-01):
+#  Mirrors analysis/analysis.slurm (confirmed by off-site collaborator 2026-06-01):
 #    partition gpu, node n01, 1 node × 1 CPU, log %J.log, err %J.err.
 #
 #  This file is a TEMPLATE — do not submit directly. Copy it then override
@@ -12,10 +12,10 @@
 #
 #  Why these defaults
 #  ------------------
-#    -p gpu   : the only partition senior confirmed runs MD jobs
-#    -w n01   : the GPU node senior uses; -N 1 -c 1 matches her template
+#    -p gpu   : the only partition the off-site collaborator confirmed runs MD jobs
+#    -w n01   : the GPU node off-site collaborator uses; -N 1 -c 1 matches her template
 #    -o/-e    : %J expands to slurm job id (deterministic per job)
-#    No -t   : senior said default wall time is enough — uncomment only
+#    No -t   : off-site collaborator said default wall time is enough — uncomment only
 #              if you see jobs killed for time
 ###############################################################################
 
@@ -24,7 +24,7 @@
 #SBATCH -e %J.err                     # stderr
 #SBATCH -p gpu                        # partition
 #SBATCH -w n01                        # node (drop -w if you see collisions)
-#SBATCH -N 1                          # 1 node (DO NOT CHANGE per senior)
+#SBATCH -N 1                          # 1 node (DO NOT CHANGE per off-site collaborator)
 #SBATCH -c 1                          # 1 CPU per task
 # #SBATCH -t 24:00:00                 # uncomment if default is too short
 

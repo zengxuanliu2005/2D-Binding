@@ -5,11 +5,11 @@ date: 2026-06-02
 last_updated: 2026-06-02
 summary: 5 methods estimate ΔΔF across 3 pairs; consensus within 0.22 kBT on flex-rigid; B1 reimpl diverges by 1.5-2 kBT from PPT s25 due to L_c sensitivity
 prediction_source: scripts/reconcile_methods.py
-measurement_source: senior PPT s25 Hu master-curve fit targets, plus 4 local computations
+measurement_source: off-site collaborator PPT s25 Hu master-curve fit targets, plus 4 local computations
 agreement_summary: flex-rigid 0.22 kBT consensus; semi-rigid 0.22 kBT; semi-flex 0.05 kBT
 next_check_when:
-  - cluster bundle returns with senior's full-data S1-S23 + s25 values
-  - senior replies on Lc convention (would shift B1 reimpl)
+  - cluster bundle returns with the off-site full-data S1-S23 + s25 values
+  - off-site collaborator replies on Lc convention (would shift B1 reimpl)
   - B2.5 F_conf adds a 6th independent method
 related_decisions: [001]
 agent_read_when:
@@ -22,8 +22,8 @@ agent_read_when:
 
 ## Methods compared
 
-1. **Target (Hu fit)** — senior's Hu master-curve K2D,max ratios → 3.56 / 2.68 / -0.90 kBT
-2. **PhD PPT s25** — senior's published trans + rot + WLC numbers → 3.64 / 2.47 / -1.18
+1. **Target (Hu fit)** — the off-site Hu master-curve K2D,max ratios → 3.56 / 2.68 / -0.90 kBT
+2. **PhD PPT s25** — the off-site published trans + rot + WLC numbers → 3.64 / 2.47 / -1.18
 3. **Four-term (S1-S23)** — `closure_four_term.py` bootstrap → +3.99 ± 0.03 / +2.71 ± 0.03 / −1.28 ± 0.03
 4. **Raw partition** — `raw_tether_partition_k2d.py` bootstrap → +3.32 ± 0.07 / +2.41 ± 0.05 / −0.92 ± 0.07
 5. **WLC three-term (this work, reimpl)** — `closure_wlc_three_term.py` Lc=12 nm → +5.23 ± 0.04 / +2.05 ± 0.03 / −3.18 ± 0.04
@@ -44,23 +44,23 @@ agent_read_when:
 
 | issue | status | next step |
 |---|---|---|
-| WLC reimpl differs from PPT s25 by 1.5-2 kBT | open — likely L_c convention (ADR 001) | senior reply |
+| WLC reimpl differs from PPT s25 by 1.5-2 kBT | open — likely L_c convention (ADR 001) | off-site collaborator reply |
 | Four-term gap from target is 14σ on flex-rigid + semi-flex | flagged as known double-counting (end-volume × rotation) | accept as documented |
 | s001 vs cluster full data | open — bundle pending | run cluster/run_analysis.sh on full data |
 
 ## What would resolve
 
-- **Senior bundle full-data results** match PPT s25 → "data volume" hypothesis
+- **Full-data analysis bundle full-data results** match PPT s25 → "data volume" hypothesis
   confirmed; close most open issues at once.
 - **B2.5** (next session) adds a 6th method (F_conf via -ln P_z), providing
   another independent triangulation point.
 
 ## Action triggers (per playbook log/decisions/007)
 
-When senior data arrives:
+When off-site full-data results arrives:
 
 - **On ΔΔF flex-rigid ≈ 3.64 kBT within bootstrap σ** → playbook S1:
-  append row "senior_full_data_round1 | 3.64 | 2.47 | -1.18 |"; mark PPT s25
+  append row "offsite_full_data_round1 | 3.64 | 2.47 | -1.18 |"; mark PPT s25
   mystery RESOLVED; flip frontmatter `status: open → resolved` and update
   `agreement_summary` to "full-data convergence confirmed".
 - **On ΔΔF ≠ PPT AND ≠ our s001** → playbook S2: append row with

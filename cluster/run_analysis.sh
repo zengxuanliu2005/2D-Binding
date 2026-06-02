@@ -6,8 +6,8 @@
 #  `sbatch cluster/slurm/full_analysis.slurm` (PRIMARY) — same orchestrator,
 #  but resource-managed.
 #
-#  Self-contained orchestrator. Walks senior's MD data (parent dir defined
-#  in cluster/SENIOR_CONFIG.sh), extracts chain_coords per replica, merges
+#  Self-contained orchestrator. Walks the off-site MD data (parent dir defined
+#  in cluster/run_config.sh), extracts chain_coords per replica, merges
 #  per system, runs 4 analyses + reconcile_methods, packs distilled outputs
 #  to ~5 MB tarball ready to email back.
 #
@@ -15,7 +15,7 @@
 #      bash cluster/run_analysis.sh           # production (all replicas)
 #      bash cluster/run_analysis.sh --pilot   # 2 replicas / system, ~5 min
 #
-#  Config: cluster/SENIOR_CONFIG.sh (single source of truth, sourced below).
+#  Config: cluster/run_config.sh (single source of truth, sourced below).
 #  Env overrides still respected (config values use ${VAR:-default} pattern).
 ###############################################################################
 set -uo pipefail
@@ -40,7 +40,7 @@ cat <<'BAN'
 
 PURPOSE
 ─────────
-Walks senior's MD data, extracts chain_coords per replica, merges per
+Walks the off-site MD data, extracts chain_coords per replica, merges per
 system, then runs:
 
   1. closure_four_term.py --bootstrap         (S1-S23 4-term decomposition)
@@ -54,13 +54,13 @@ WeChat / email to Zengxuan.
 
 BAN
 
-# Source single-source config (SENIOR_CONFIG.sh sits next to this script)
-if [[ -f "$BUNDLE_ROOT/SENIOR_CONFIG.sh" ]]; then
+# Source single-source config (run_config.sh sits next to this script)
+if [[ -f "$BUNDLE_ROOT/run_config.sh" ]]; then
     # shellcheck disable=SC1091
-    source "$BUNDLE_ROOT/SENIOR_CONFIG.sh"
-    echo "[config sourced from cluster/SENIOR_CONFIG.sh]"
+    source "$BUNDLE_ROOT/run_config.sh"
+    echo "[config sourced from cluster/run_config.sh]"
 else
-    echo "WARN: SENIOR_CONFIG.sh not found at $BUNDLE_ROOT/; using built-in defaults"
+    echo "WARN: run_config.sh not found at $BUNDLE_ROOT/; using built-in defaults"
     SYSTEMS_DIRS=(
         "15_120x120_K100_EPS05"
         "15_120x120_K10_EPS05"
@@ -88,7 +88,7 @@ mkdir -p "$EXTRACTED_DIR" "$MERGED_DIR" "$DISTILLED"
 
 # raw_tether_partition_k2d and diagnose_bound_vs_unbound read raw traj.xyz
 # directly from `<bundle_root>/outputs/<system>/s001/` — point that at the
-# real MD parent dir so they find senior's first-replica data.
+# real MD parent dir so they find the off-site first-replica data.
 if [[ ! -e "$BUNDLE_ROOT/outputs/md_root" ]]; then
     ln -s "$(cd "$MD_PARENT" && pwd)" "$BUNDLE_ROOT/outputs/md_root"
 fi

@@ -27,7 +27,7 @@
 #  Expected wall time : < 1 minute.
 #  Failure tolerance  : if pygamd is missing entirely, Workstream C is
 #                       blocked until it's installed. The §0 bundle-for-
-#                       senior path does NOT need pygamd, so 01/02/04 can
+#                       off-site collaborator path does NOT need pygamd, so 01/02/04 can
 #                       still proceed even if 03 fails.
 #
 #  What to send back
@@ -187,7 +187,7 @@ PY
 # ── summary ──────────────────────────────────────────────────────────────────
 section 'Summary'
 cat <<'EOF'
-   Look at the output above and tell Claude:
+   Look at the output above and report:
 
      1. Which import line printed OK (Step 1)
      2. Whether ref/nvt-md.py was found and what its imports look like (Step 2)
@@ -198,7 +198,7 @@ cat <<'EOF'
    cluster/scripts/nvt-md-constrained-h.py and we can submit a real
    constrained-h pilot via cluster/slurm/single_pilot.slurm.
 
-   If everything failed: pygamd isn't installed here. Tell senior so she
+   If everything failed: pygamd isn't installed here. Tell off-site collaborator so she
    can confirm install path. The §0 bundle path (which doesn't need pygamd)
    is still your fastest answer to the data-volume question.
 

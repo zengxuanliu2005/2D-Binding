@@ -58,9 +58,9 @@ Trial host: `master`, user `ugstu`, cwd `/mnt/nfs/ugstu/liuzx/2D-Binding-main`,
   - `from poetry import cu_gala` → ModuleNotFoundError (matches what `ref/nvt-md.py` uses)
   - Same for all other candidates.
 
-  This means **Workstream C (constrained-h slab MD) is blocked** until senior or admin installs the `poetry`+`cu_gala` package — same package she uses to run `ref/nvt-md.py` on this cluster. **The §0 data-volume bundle path does NOT need pygamd**, so we can proceed with that independently.
+  This means **Workstream C (constrained-h slab MD) is blocked** until off-site collaborator or admin installs the `poetry`+`cu_gala` package — same package she uses to run `ref/nvt-md.py` on this cluster. **The §0 data-volume bundle path does NOT need pygamd**, so we can proceed with that independently.
 
-  **Action**: Ask senior how she installs / activates `cu_gala` on this cluster. She must have a non-default conda env or a custom install path; tell us the recipe.
+  **Action**: Ask off-site collaborator how she installs / activates `cu_gala` on this cluster. She must have a non-default conda env or a custom install path; tell us the recipe.
 
 ### Bonus observation
 
@@ -76,7 +76,7 @@ Applied in this round (see commit):
 User actions for Round 2 (no Claude changes needed):
 
 - Run `bash cluster/env_setup/install_phys.sh` to create `phys` env (#1)
-- WeChat senior for `cu_gala` install recipe (#4) — async
+- WeChat off-site collaborator for `cu_gala` install recipe (#4) — async
 
 ## Next round
 
@@ -98,6 +98,6 @@ Expected Round 2 verdict:
 - 01: ✓✓✓ ALL CHECKS PASSED (gpu regex fix + phys env exists)
 - 04: ✓✓✓ TRIAL 04 PASSED (extract reads K100 s001 traj.xyz successfully)
 
-Then we're ready to ship `cluster/` to senior **and** kick off `bash cluster/run_analysis.sh` locally on cluster-A using YOUR 7 replicas (mini §0 — independent of senior).
+Then we're ready to ship `cluster/` to off-site collaborator **and** kick off `bash cluster/run_analysis.sh` locally on cluster-A using YOUR 7 replicas (mini §0 — independent of off-site collaborator).
 
-03 (pygamd) stays red until senior comes back with install recipe; that only matters for Workstream C.
+03 (pygamd) stays red until off-site collaborator comes back with install recipe; that only matters for Workstream C.

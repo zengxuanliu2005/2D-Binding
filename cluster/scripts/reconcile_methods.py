@@ -93,7 +93,7 @@ PURPOSE
 ─────────
 Compares five independent ΔΔF estimates:
 
-  1. Target — Hu master-curve K2D,max ratios (from senior's PPT)
+  1. Target — Hu master-curve K2D,max ratios (from the source PPT)
   2. PhD PPT s25 — trans + rot + conf-WLC, her published values
   3. Four-term decomposition (S1-S23) — local closure_four_term.py
   4. Raw partition — bootstrap from raw_tether_partition_k2d.py

@@ -12,7 +12,7 @@ agent_read_when:
   - planning derivation/05 (F_conf) or essay §5.3 update
 ---
 
-> **Loop 2 revision protocol**: see `log/decisions/007_loop2_b_revision_playbook.md` for the explicit decision tree mapping senior-data observations → which Q here gets closed / refined and which calibration row to flip.
+> **Loop 2 revision protocol**: see `log/decisions/007_loop2_b_revision_playbook.md` for the explicit decision tree mapping off-site data observations → which Q here gets closed / refined and which calibration row to flip.
 
 # 05_open_questions — what B2.4 leaves on the table
 
@@ -68,7 +68,7 @@ not Gaussian).
 (b) **Hard-gate kernel adds rcut/√5 ≈ 0.67 nm in quadrature** to σ_K2D.
     The soft-Boltzmann kernel from `raw_tether_partition_k2d.py` has
     narrower effective width and would reduce σ_K2D by ~0.2 nm.
-(c) **Measured ξ_RL is NOT σ_K2D literally**. Senior's ξ_RL comes from
+(c) **Measured ξ_RL is NOT σ_K2D literally**. The ξ_RL comes from
     fitting K2D(ξ⊥) = ∫ K2D(l) P(l) dl to a Gaussian in ξ⊥. The Weikl
     2016 convolution introduces a system-dependent σ_p (membrane gap
     width) that we don't model. For Gaussian K2D(l) and Gaussian P(l):

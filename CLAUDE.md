@@ -15,7 +15,7 @@ navigation_map:
   - { path: log/,         purpose: session memory + ADRs + calibration tables,                  read_for: "rationale, history, decisions" }
   - { path: derivation/,  purpose: theory derivations (B2 WLC chain → K2D(l) → ξ_RL → F_conf),  read_for: "why a formula is what it is" }
   - { path: scripts/,     purpose: local analysis modules (laptop, s001 single-replica),         read_for: "running local analyses" }
-  - { path: cluster/,     purpose: pipelines that ship to cluster-A or senior; trial validation, read_for: "cluster work, senior bundle, trial outputs/results" }
+  - { path: cluster/,     purpose: "full-data analysis bundle (run_config.sh + slurm/full_analysis.slurm + scripts/) + trial harness (trial/) + Loop 2 IO dirs (outputs/ results/). release_bundle.sh packs the bundle.", read_for: "cluster work, full-data analysis bundle, trial outputs/results, Loop 1/2 protocol" }
   - { path: results/,     purpose: numerical outputs (md + npz + figures),                       read_for: "current measured / predicted numbers" }
   - { path: writeup/,     purpose: stage essay (English), upcoming Chinese essay/slides/poster, read_for: "academic deliverables" }
   - { path: ref/,         purpose: reference papers + ref/nvt-md.py force-field source of truth, read_for: "literature, MD force field" }
@@ -115,7 +115,7 @@ handoffs which are now backfilled into log/sessions/.
 
 - **cluster-A**: `master`, repo path `/mnt/nfs/ugstu/liuzx/2D-Binding-main`.
   conda at `/opt/miniconda3`, sbatch present, `gpu*` partition with 8 idle nodes.
-- **cluster-B**: senior's server, NOT accessible to us. Senior runs
+- **cluster-B**: the off-site compute server, NOT accessible to us. The off-site collaborator runs
   bundle on it and emails back distilled tarball.
 - **Workstream C** (constrained-h slab MD): blocked on cu_gala install
   on cluster-A. § 0 bundle path is the alternative.
@@ -123,7 +123,7 @@ handoffs which are now backfilled into log/sessions/.
 ## Reference papers
 
 `ref/`: Hu 2013 (PNAS), Xu 2015 (JCP), Weikl 2016 (Cell Adh & Migr),
-Hou 2025 (JCTC). The senior's PPT (`2D-binding-MD.pdf`) is in repo root.
+Hou 2025 (JCTC). The the source PPT (`2D-binding-MD.pdf`) is in repo root.
 
 ## Anti-patterns (do not repeat)
 
@@ -132,7 +132,7 @@ Hou 2025 (JCTC). The senior's PPT (`2D-binding-MD.pdf`) is in repo root.
   The current B2 framework (discrete WLC MC) spans all 3 classes by construction.
 - Do NOT tune terms to hit a target. The S1-S23 closure passes by construction
   on s001; the L_c sensitivity is exposed by B1 reimpl deliberately to test
-  the senior's framework.
+  the the off-site framework.
 - Do NOT introduce `phd_*` filenames — renamed to purpose-based names in
   session 3 (see ADR for the rename rationale embedded in
   `log/sessions/session3_refactor.md`).
@@ -143,4 +143,4 @@ Hou 2025 (JCTC). The senior's PPT (`2D-binding-MD.pdf`) is in repo root.
 - B2 code: `scripts/k2d_l_wlc_theory.py`
 - 5-method consensus: `scripts/reconcile_methods.py`
 - Cluster trial entry: `cluster/trial/README.md`
-- Senior-facing bundle docs: `cluster/README_for_senior_zh.md`
+- Off-site collaborator-facing bundle docs: `cluster/HOWTO_run_full_data_zh.md`

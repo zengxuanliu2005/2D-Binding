@@ -35,11 +35,11 @@ Status keys: `[x]` done · `[~]` in progress · `[ ]` todo
 ## Phase 1 — Lock the targets [DONE pre-session 1]
 
 - [x] K2D,max baseline numbers (12705 / 875 / 362 nm²) confirmed against
-      senior's PPT slide 9. ΔΔF targets +3.56 / +2.68 / -0.90 kBT.
+      the source PPT slide 9. ΔΔF targets +3.56 / +2.68 / -0.90 kBT.
 
 ## Phase 2 — Four-term S1-S23 closure [DONE pre-session 1]
 
-- [x] Four-term closure: F_t + F_c + F_bond + F_rot per the senior's PPT
+- [x] Four-term closure: F_t + F_c + F_bond + F_rot per the the source PPT
       slides S1-S23. Reproduces target ΔΔF within 0.4 kBT.
 - [x] Code: `scripts/closure_four_term.py` (renamed from `phd_closure.py` in
       session 3) driven by `scripts/free_energy_terms.py` (renamed) and
@@ -61,7 +61,7 @@ Status keys: `[x]` done · `[~]` in progress · `[ ]` todo
 ## Phase 4 — Deliverables [IN PROGRESS]
 
 - [~] Write-up (stage_essay.md draft exists; v2 pending B2 + cluster results).
-- [ ] Slide deck (Chinese, aligned with senior PPT structure).
+- [ ] Slide deck (Chinese, aligned with off-site collaborator PPT structure).
 - [ ] Poster (A0).
 - [ ] Re-do all figures with academic-publication style (D1 in plan).
 
@@ -75,18 +75,18 @@ Status keys: `[x]` done · `[~]` in progress · `[ ]` todo
             — B2 beats Xu by 8-14× on rigid:flex / rigid:semi ratios
       - B2.5 F_conf via -ln P_z(D_bound) (session 6b, commit 5a06ed4)
             — anchor-cone surcharge Δ = +3.79 / +1.21 / -0.04 kBT monotone in lp
-- [~] Cluster trial validation (round 1 done; round 2 pending user push).
-- [ ] Senior bundle round-trip on full data (cluster-B).
-- [ ] Constrained-h slab MD (Workstream C; blocked on cu_gala install).
+- [x] Cluster trial validation — login + compute both ✓ on 2026-06-02 (verdict file: `cluster/trial/results/2026-06-02_round2_verdict.md`); release authorised
+- [ ] Full-data analysis bundle round-trip — pending `bash cluster/release_bundle.sh` + send to off-site collaborator + wait for distilled return
+- [ ] Constrained-h slab MD (Workstream C; blocked on cu_gala install)
 
-## Phase 6 — Documentation + delivery [STARTING]
+## Phase 6 — Documentation + delivery [IN PROGRESS]
 
-- [x] **Session 6a — meta plumbing** (commit 9ed3dc2): log/ bootstrap (sessions × 6,
-      decisions × 6, calibration × 4), CLAUDE.md restructure with navigation map,
-      Tier 1/2 YAML frontmatter on 45 md files, derivation/ schema doc.
+- [x] **Session 6a — meta plumbing** (commit 9ed3dc2): log/ bootstrap, CLAUDE.md restructure with navigation map, Tier 1/2 YAML frontmatter on 45 md files.
 - [x] **Session 6b — B2.4 + B2.5** (commits 02ab226, 5a06ed4).
-- [ ] **Workstream D** (figures + essay v2 + slides + poster) — see plan
-      Phase 6 decision tree in user-dir plan.
+- [x] **Session 6c — cluster-prep + audit** (commits e860152, 196ecf4, d72b35e): `analyze_slab_traj.py` real K2D math; legacy results md → Tier 2 FM; b2_chain_completeness snapshot.
+- [x] **Session 7 — double-loop protocol** (commits 72b01dc, c52e107, 6621b56): SBATCH wrapper + `release_bundle.sh` + ADR 007 Loop 2 playbook.
+- [x] **Session 8 — repo-wide cleanup** (commits TBD): person references removed from all active files; compute_node_check promoted to Step 5; round 1+2 diagnosis + verdict; 4 new index READMEs; comprehensive README audit.
+- [ ] **Workstream D** (figures + essay v2 + slides + poster) — see user-dir plan Session 9+.
 
 ---
 

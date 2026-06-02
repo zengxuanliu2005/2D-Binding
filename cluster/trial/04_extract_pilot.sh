@@ -5,7 +5,7 @@
 #
 #  Purpose (also printed when this runs)
 #  -------------------------------------
-#  The §0 bundle (bundle_for_senior/) hinges on one Python script working
+#  The §0 bundle ((removed legacy dir)) hinges on one Python script working
 #  end-to-end: extract_chain_coords.py reading traj.xyz + mol.psf +
 #  num_bonds_for_xyz_frames.dat and writing chain_coords.npz with the right
 #  schema (positions_R / positions_L / bound_R / bound_L / partner_R /
@@ -14,10 +14,10 @@
 #  We confirm this on cluster-A using your K100 s001 — the smallest possible
 #  real test. If this passes:
 #
-#    • The bundle will work when senior runs it on her server.
+#    • The bundle will work when the off-site collaborator runs it on her server.
 #    • cluster/scripts/extract_one_replica.py path constants are correct.
 #    • We can move on to running the full bundle (--pilot mode) and start
-#      packaging it for senior.
+#      packaging it for off-site full-data run.
 #
 #  Expected wall time : ~1-2 min (50 frames extracted from one traj.xyz).
 #
@@ -51,7 +51,7 @@ This is the smallest real test of the §0 bundle pipeline. We:
   (d) report bound/unbound R counts so we can see this is real data, not
       garbage
 
-If this passes the §0 bundle will work on senior's server. If it fails the
+If this passes the §0 bundle will work on the off-site compute server. If it fails the
 fix lives in cluster/scripts/extract_one_replica.py (path constants) or in
 cluster/scripts/topology.py / bonds.py (file-format assumptions). Either
 way Claude can patch with the exact error message from this script.
@@ -220,7 +220,7 @@ if [[ "$RC" -eq 0 && "$FAILED" -eq 0 ]]; then
    Means:
      • extract_one_replica.py works on cluster reality
      • cluster/scripts/topology.py + bonds.py read your traj/psf correctly
-     • chain_coords.npz schema is exactly what bundle_for_senior expects
+     • chain_coords.npz schema is exactly what bundle_for_off-site collaborator expects
 
    Send back to Claude:
      • The "contents:" table (shape + dtype of each key)
@@ -229,14 +229,14 @@ if [[ "$RC" -eq 0 && "$FAILED" -eq 0 ]]; then
 
    Next steps you can do without me:
      1. If 02_paths_check showed you have YOUR own s002+:
-            cp -R cluster/bundle_for_senior /mnt/nfs/ugstu/liuzx/
-            cd /mnt/nfs/ugstu/liuzx/bundle_for_senior
+            cp -R cluster/bundle_for_off-site collaborator /mnt/nfs/ugstu/liuzx/
+            cd /mnt/nfs/ugstu/liuzx/off-site analysis bundle
             bash run_full_analysis.sh --pilot
         That tests the full pipeline on your data, ~5 min.
-     2. Otherwise just package the bundle for senior:
+     2. Otherwise just package the bundle for off-site full-data run:
             cd /mnt/nfs/ugstu/liuzx/2D-Binding/cluster
-            tar czf bundle_for_senior.tgz bundle_for_senior/
-            ls -lh bundle_for_senior.tgz
+            tar czf off-site analysis bundle.tgz (removed legacy dir)
+            ls -lh off-site analysis bundle.tgz
         and send to her via WeChat / email.
 EOF
 else
@@ -245,7 +245,7 @@ else
 
    Common fixes:
      • "no K100 directory found" → 02_paths_check showed your dirs differ
-       from K100; tell Claude the actual prefix.
+       from K100; report the actual prefix.
      • "missing required keys" → schema mismatch in topology.py / bonds.py;
        cluster MD outputs are slightly different format from local.
      • "extract exited with code N" → paste the Python traceback; it

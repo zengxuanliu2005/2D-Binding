@@ -51,7 +51,7 @@ SYS_ALIAS = {
     "K01":  "22_120x120_K01_EPS05",
 }
 
-# TODO: confirm this is the cluster path with senior; ENV var override available
+# TODO: confirm this is the cluster path with the off-site collaborator; ENV var override available
 DEFAULT_MD_BASE = os.environ.get("MD_BASE", "/mnt/nfs/ugstu/liuzx/2D-Binding-MD")
 
 
@@ -142,7 +142,7 @@ def main(argv: list[str] | None = None) -> int:
         assert 0 < nf <= 50, f"PILOT FAIL: n_frames={nf} not in (0, 50]"
         print(f"\n   ✓  PILOT OK: n_frames={nf}, n_R={int(d['n_R'])}, "
               f"n_L={int(d['n_L'])}, file_size_MB={out_path.stat().st_size/1e6:.1f}")
-        print("\n   Tell Claude: schema OK, paths resolved correctly.")
+        print("\n   Report: schema OK, paths resolved correctly.")
     return 0
 
 

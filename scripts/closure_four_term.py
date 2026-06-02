@@ -191,7 +191,7 @@ Computes the per-system free-energy decomposition
 
     ΔF = F_trans + F_conf + F_bond + F_rot
 
-per the senior's S1-S23 framework, using chain_coords.npz inputs from
+per the S1-S23 framework, using chain_coords.npz inputs from
 system_inputs.py and formulas from free_energy_terms.py. Then for each
 of the three pair comparisons (flex−rigid, semi−rigid, semi−flex)
 computes ΔΔF_term and ΔΔF_sum, and compares against the target ΔΔF.

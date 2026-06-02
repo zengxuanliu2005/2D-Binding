@@ -570,7 +570,7 @@ def run_pilot() -> int:
           f"(prediction: 2·⟨z⟩_rigid ≈ {2*mc_mean:.2f} nm)")
     print(f"   ⟨l⟩      = {stats_pilot['l_mean']:.3f} nm")
     print(f"   σ_K2D    = {stats_pilot['sigma_K2D']:.3f} nm  "
-          f"(reference: senior's fitted ξ_RL ≈ 0.685 nm)")
+          f"(reference: the measured fitted ξ_RL ≈ 0.685 nm)")
     # Rough sanity: peak near 2·⟨z⟩, σ comparable to √2 · σ_z_rigid (1 nm-ish)
     if not (15.0 < stats_pilot['l_star'] < 25.0):
         fails.append(f"K2D,rigid×rigid peak at unexpected l = {stats_pilot['l_star']:.2f} nm "

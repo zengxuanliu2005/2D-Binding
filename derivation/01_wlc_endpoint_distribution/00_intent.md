@@ -16,7 +16,7 @@ agent_read_when:
 
 ## The gap we are closing
 
-The senior's `xi_rl_candidates.py` shows that **Xu 2015's formula**
+The the off-site `xi_rl_candidates.py` shows that **Xu 2015's formula**
 
   ξ_RL² = k_B T / k_RL + (k_B T · L₀ / (2 k_a))²
 
@@ -75,7 +75,7 @@ The WLC implementation in `scripts/k2d_l_wlc_theory.py` is accepted when:
    - flex  (Lc/lp = 100): MC P(R) within 5% RMSE of analytical Gaussian over R/Lc ∈ [0.05, 0.5]
 2. **Self-consistent** with measured Re from chain_coords.npz
    - ⟨R²⟩^{1/2} from MC at our three lp values matches Re measured in `system_inputs.py`
-     (the senior's PPT-slide values 14.76 / 11.65 / 5.66 nm) within 15%.
+     (the the source PPT-slide values 14.76 / 11.65 / 5.66 nm) within 15%.
 3. **Numerical convergence**
    - Doubling MC chain count changes the P(R) histogram bin probabilities
      by less than 3% in bins with > 0.5% population.

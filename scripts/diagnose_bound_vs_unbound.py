@@ -149,7 +149,7 @@ Interpretation
   Δtilt > 0 : bound chains tilt less than unbound
 
 A1 finding (s001 only): rigid Δz=−0.26 nm, Δtilt=+7°; flex Δz=−1.48 nm,
-Δtilt=+14°. Re-run with the senior's full data should shrink these
+Δtilt=+14°. Re-run with the the off-site full-data run should shrink these
 toward statistical noise IF the "data volume" hypothesis is right.
 """
 

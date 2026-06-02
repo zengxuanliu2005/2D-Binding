@@ -6,13 +6,13 @@ summary: 05_open_questions — caveats and next-round actions (02_z_marginal)
 derivation_folder: 02_z_marginal
 step: open_questions
 inputs: 03_result.md sanity tables; 04_numerics.md
-outputs: short punch list for derivation/03 and the senior-conversation queue
+outputs: short punch list for derivation/03 and the off-site collaborator-conversation queue
 agent_read_when:
   - working on 02_z_marginal or its successor
   - need to know the open_questions of this derivation step
 ---
 
-> **Loop 2 revision protocol**: see `log/decisions/007_loop2_b_revision_playbook.md` for the explicit decision tree mapping senior-data observations → which Q here gets closed / refined and which calibration row to flip.
+> **Loop 2 revision protocol**: see `log/decisions/007_loop2_b_revision_playbook.md` for the explicit decision tree mapping off-site data observations → which Q here gets closed / refined and which calibration row to flip.
 
 # 05_open_questions — caveats and next-round actions
 
@@ -31,13 +31,13 @@ K2D for very short separations.
 - Either (a) truncate z_lab > 0 and renormalise, or (b) keep the full
   distribution but only evaluate K2D(l) for l > 0 where the binding kernel
   is physically nonzero.
-- (a) is simpler and matches the senior's S17-S21 "end-volume" framework
+- (a) is simpler and matches the the off-site S17-S21 "end-volume" framework
   which implicitly assumes the chain stays in the gap. Plan to use (a).
 
 ## Q2 — Lc convention (inherited from derivation/01)
 
 Same Q1 from `derivation/01/05_open_questions.md` applies here: if the
-senior tells us her Re comes from the full chain (Lc ≈ 24 nm) not ecto
+off-site collaborator tells us her Re comes from the full chain (Lc ≈ 24 nm) not ecto
 only (Lc = 12 nm), the rigid + semi MC numbers shift, but the formalism
 is unchanged (just rerun with the new Lc).
 

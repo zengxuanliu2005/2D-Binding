@@ -1,14 +1,14 @@
 ---
-purpose: 'Convention: Claude writes <date>_analysis.md per round of senior-side data'
+purpose: 'Convention: Claude writes <date>_analysis.md per round of off-site-run-side data'
 audience: Claude (writes); user (reads conclusions)
 status: current
 ---
 
-# cluster/results/ — Claude writes senior-side analysis conclusions here
+# cluster/results/ — Claude writes off-site-run-side analysis conclusions here
 
 ## Purpose
 
-For each round of senior-side raw outputs in
+For each round of off-site-run-side raw outputs in
 `cluster/outputs/<date>_round<N>/`, Claude reads them, compares to our
 laptop's s001-only results in `results/`, and writes the diff +
 interpretation here.
@@ -20,7 +20,7 @@ cluster/results/
 ├── 2026-06-05_round1_analysis.md     # diff vs s001, interpretation
 ├── 2026-06-05_round1_figures/        # (optional) diff plots
 │   └── ddF_full_vs_s001.png
-├── 2026-06-05_round1_next_actions.md # what to ask senior next (if anything)
+├── 2026-06-05_round1_next_actions.md # what to ask off-site collaborator next (if anything)
 └── 2026-06-09_round2_verdict.md      # data-volume hypothesis CONFIRMED / REJECTED
 ```
 
@@ -34,7 +34,7 @@ status: draft   # or accepted when verdict locked
 date: <YYYY-MM-DD>
 round: N
 summary: "<one-line: did §0 hypothesis confirm and what B revisions fire>"
-related_release: cluster/RELEASES.md row <date>   # which tarball senior ran
+related_release: cluster/RELEASES.md row <date>   # which tarball off-site collaborator ran
 related_decisions: [005, 007]
 related_calibration: [b2_vs_measured_xi_rl, closure_methods_consensus, fconf_three_way, b2_chain_completeness]
 ---
@@ -50,7 +50,7 @@ related_calibration: [b2_vs_measured_xi_rl, closure_methods_consensus, fconf_thr
 
 ## Key numbers
 
-| metric | s001 (laptop) | senior's full data | Δ | verdict |
+| metric | s001 (laptop) | the off-site full-data run | Δ | verdict |
 |---|---|---|---|---|
 | closure_four_term ΔΔF flex−rigid | +3.99 ± 0.03 | <value> | <diff> | <converged/diverged> |
 | closure_wlc_three_term ΔΔF flex−rigid | +5.23 ± 0.04 | <value> | ... | ... |
@@ -61,15 +61,15 @@ related_calibration: [b2_vs_measured_xi_rl, closure_methods_consensus, fconf_thr
 
 ## B-revision impact (per playbook log/decisions/007)
 
-For each senior data field, identify which Conflict Map scenario (S1-S8)
+For each off-site full-data results field, identify which Conflict Map scenario (S1-S8)
 fires, then apply the prescribed action from playbook 007. **Every row that
 fires MUST produce a concrete file edit** (derivation/calibration/session
 log) — no soft "TBD" rows allowed.
 
-| senior data field | observed | fires? | derivation/0X/05_open_questions update | calibration row to flip | re-run? |
+| off-site full-data results field | observed | fires? | derivation/0X/05_open_questions update | calibration row to flip | re-run? |
 |---|---|---|---|---|---|
 | ΔΔF flex-rigid ≈ 3.64 kBT (PPT) | <obs>  | S1?   | derivation/05 Q3 resolved | closure_methods_consensus row | rerun B1 with merged → expect 3.64 |
-| ΔΔF flex-rigid ≠ 3.64 AND ≠ 5.23 | <obs>  | S2?   | (Lc question to senior first) | b2_vs_pptx_re append | rerun B2.1-2.5 with Lc=25 if confirmed |
+| ΔΔF flex-rigid ≠ 3.64 AND ≠ 5.23 | <obs>  | S2?   | (Lc question to off-site collaborator first) | b2_vs_pptx_re append | rerun B2.1-2.5 with Lc=25 if confirmed |
 | σ(R_z) rigid > 0.55 nm           | <obs>  | S3?   | derivation/02 Q2 resolved | b2_vs_measured_xi_rl (a); b2_chain_completeness 19/20 | rerun xi_rl_lp_prediction with new σ_z |
 | k_a per system spread > 10%      | <obs>  | S4?   | (no closure; new derivation work) | new ADR 008; b2_vs_measured_xi_rl ratio test | rerun B2.2-2.5 with per-system k_a |
 | slab K2D(l) shape RMSE < 10%     | (TBD)  | S5?   | (validates; no edit) | b2_vs_measured_xi_rl resolved-by-slab | optional new essay figure |
@@ -78,18 +78,18 @@ log) — no soft "TBD" rows allowed.
 | metadata: ξ_RL fit is fixed-h slab | (TBD) | S8?   | derivation/04 Q3 (c) closed | b2_vs_measured_xi_rl drop factor (c) | none |
 
 (Tick `(TBD)` rows are slab-data dependent — leave as "no observation yet" if
-Round N is only senior bundle (no slab). When slab MD lands, a new round of
+Round N is only full-data analysis bundle (no slab). When slab MD lands, a new round of
 Loop 2 analysis revisits them.)
 
 ## §0 hypothesis decision
 
 ✓ Hypothesis CONFIRMED — full data closes the gap; essay §4.5/§5.4 rewrite as "closed".
 ✗ Hypothesis REJECTED — bias persists; we need Workstream C (constrained-h slab MD).
-? Need more rounds — specific follow-up: <what to ask senior>
+? Need more rounds — specific follow-up: <what to ask the off-site collaborator>
 
 ## Next actions
 - For user: <commit / sync / next step>
-- For senior (if any): <next request>
+- For off-site collaborator (if any): <next request>
 - For Claude (Session 6d+): <which derivation edits + calibration flips + session log to write per the B-revision impact table>
 ```
 

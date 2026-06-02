@@ -37,7 +37,7 @@ the determinant of ξ_RL. If we can predict K2D(l) from lp alone (no fitting
 to MD data), we have an analytic ξ_RL(lp) function — which is what
 derivation 04 needs to test against measured ξ_RL = 0.685/2.076/2.253 nm.
 
-The senior's Hu/Xu formula explicitly assumed K2D(l) is Gaussian in l.
+The the off-site Hu/Xu formula explicitly assumed K2D(l) is Gaussian in l.
 stage_essay §4.3 already showed this assumption breaks for semi/flex
 (K10/K01 systems). Our explicit MC-based K2D(l) makes no Gaussian
 assumption — it reads the actual shape from B2.2's P_z(z) histograms.

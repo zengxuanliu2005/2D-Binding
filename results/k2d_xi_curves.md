@@ -38,9 +38,9 @@ Convolves measured `K2D_eff(h)` from `raw_tether_partition.npz` with Gaussian `P
 
 ## Validation against simulation data (`results/external/result_K*.tsv`)
 
-Our prediction has **1 free parameter** (overall scale `K2D,max_ours`); Hu master curve has **2** (`K2D,max_hu` and `ξ_RL`). Fits to senior's K2D data points, unweighted least squares.
+Our prediction has **1 free parameter** (overall scale `K2D,max_ours`); Hu master curve has **2** (`K2D,max_hu` and `ξ_RL`). Fits to the measured K2D data points, unweighted least squares.
 
-⚠️ K1 file corresponds to K=1 ε in senior's data — our K01 traj is K=0.1 ε (10× more flexible). flex-row comparison is qualitative only.
+⚠️ K1 file corresponds to K=1 ε in the off-site full-data results — our K01 traj is K=0.1 ε (10× more flexible). flex-row comparison is qualitative only.
 
 | system | n_pts | K2D,max ours (nm²) | RMSE_rel ours | R² ours | K2D,max Hu (nm²) | ξ_RL Hu (σ) | RMSE_rel Hu | R² Hu |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|

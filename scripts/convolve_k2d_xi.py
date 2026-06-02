@@ -19,7 +19,7 @@ SYSTEMS = [
     ("flex", "K01 (flex)"),
 ]
 
-# Map our system label to senior's tsv filename (note K=1 vs K=0.1 caveat for flex)
+# Map our system label to the off-site tsv filename (note K=1 vs K=0.1 caveat for flex)
 DATA_FILES = {
     "rigid": "result_K100.tsv",  # K=100, direct match
     "semi": "result_K10.tsv",    # K=10, direct match
@@ -267,8 +267,8 @@ def main():
         fp.write("\n## Validation against simulation data (`results/external/result_K*.tsv`)\n\n")
         fp.write("Our prediction has **1 free parameter** (overall scale `K2D,max_ours`); "
                  "Hu master curve has **2** (`K2D,max_hu` and `ξ_RL`). Fits to "
-                 "senior's K2D data points, unweighted least squares.\n\n")
-        fp.write("⚠️ K1 file corresponds to K=1 ε in senior's data — our K01 traj is "
+                 "the measured K2D data points, unweighted least squares.\n\n")
+        fp.write("⚠️ K1 file corresponds to K=1 ε in the off-site full-data results — our K01 traj is "
                  "K=0.1 ε (10× more flexible). flex-row comparison is qualitative only.\n\n")
         fp.write("| system | n_pts | K2D,max ours (nm²) | RMSE_rel ours | R² ours | "
                  "K2D,max Hu (nm²) | ξ_RL Hu (σ) | RMSE_rel Hu | R² Hu |\n")

@@ -62,5 +62,5 @@ The round is closed when Claude commits both:
 
 Trial pipeline is "validated" when a `<date>_round<N>_verdict.md` here
 says all 4 trial scripts pass on cluster-A with no required changes.
-At that point we ship the bundle to senior (see `cluster/outputs/`
-README for the senior-side double-loop).
+At that point we ship the bundle to off-site collaborator (see `cluster/outputs/`
+README for the off-site full-data run side double-loop).

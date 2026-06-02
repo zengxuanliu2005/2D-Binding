@@ -107,7 +107,7 @@ results/derivation_b2/xi_rl_lp_prediction.npz
     <label>__sigma_K2D_std            scalar — bootstrap std
     <label>__K2D_max_boot             (200,) float64
     <label>__xi_rl_xu_2015            scalar — Xu 2015 predictor
-    <label>__xi_rl_measured           scalar — senior's fit
+    <label>__xi_rl_measured           scalar — the measured fit
     <label>__lp_nm                    scalar
     <label>__k_a_eps                  scalar — k_a_eff in ε/rad²
   ratio__<A>_over_<B>__{B2,B2_se,Xu,measured}    (3 ratios × 4 sources)

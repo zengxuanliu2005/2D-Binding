@@ -94,7 +94,7 @@ compute and tabulate four numbers:
 |---|---|---|
 | ΔΔF_conf^(B2)   | F_conf^(B2)(A, D_A) − F_conf^(B2)(B, D_B)       | this step |
 | ΔΔF_conf^(MS)   | F_conf^(MS)(A, D_A, lp_A, Lc) − same(B)         | B1 reimpl |
-| ΔΔF_sum^(s25)   | senior PPT s25 closure total (trans+rot+MS)     | PPT slide 25 |
+| ΔΔF_sum^(s25)   | off-site collaborator PPT s25 closure total (trans+rot+MS)     | PPT slide 25 |
 
 Note ΔΔF_sum^(s25) is not directly F_conf — it includes trans+rot. We
 display it for context (to know the target the closure aims at).

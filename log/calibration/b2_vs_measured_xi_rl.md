@@ -5,11 +5,11 @@ date: 2026-06-02
 last_updated: 2026-06-02
 summary: "B2.4 independent-draws σ_K2D over-predicts measured ξ_RL by 1.3-1.9× absolute; ratio test rigid:flex = 0.39 vs measured 0.30 (28% off) — Xu 2015 ratio = 1.00 (229% off), so B2 captures lp discrimination decisively"
 prediction_source: derivation/03_k2d_l_kernel/ σ_K2D from k2d_l_curves.npz
-measurement_source: stage_essay §4.4 (senior fit on K2D(ξ⊥) data) ξ_RL = 0.685 / 2.076 / 2.253 nm
+measurement_source: stage_essay §4.4 (off-site collaborator fit on K2D(ξ⊥) data) ξ_RL = 0.685 / 2.076 / 2.253 nm
 agreement_summary: 1.7-2.6× over-prediction, semi vs flex ordering reversed
 next_check_when:
   - cluster slab MD K2D(l) returns (direct ground truth)
-  - senior bundle full-data results return (recheck σ_K2D in non-data-starved regime)
+  - full-data analysis bundle results return (recheck σ_K2D in non-data-starved regime)
   - B2.4 implements "ratio test" sidestepping absolute calibration
 related_decisions: [001, 003, 004]
 agent_read_when:
@@ -18,7 +18,7 @@ agent_read_when:
   - debugging σ_K2D over-prediction
 ---
 
-# Calibration — B2 σ_K2D vs senior's measured ξ_RL
+# Calibration — B2 σ_K2D vs the measured ξ_RL
 
 ## Running table (newest on top)
 
@@ -57,16 +57,16 @@ derivation/03 05 Q2).
 
 - Cluster slab K2D(l) measures σ_K2D directly per (system, h). If matches
   measured ξ_RL → (c) is the dominant gap, our σ_K2D needs deconvolution.
-- Senior bundle full-data σ(R_z) is much larger than PPT slide 5 (0.35 nm)
+- Full-data analysis bundle full-data σ(R_z) is much larger than PPT slide 5 (0.35 nm)
   → (a) resolves; B2.3 over-prediction shrinks.
 - Soft kernel swap → (b) shrinks by ~0.3 nm.
 
 ## Action triggers (per playbook log/decisions/007)
 
-When senior data arrives:
+When off-site full-data results arrives:
 
 - **On σ(R_z) rigid > 0.55 nm** → playbook S3: append new running table row
-  `senior_full_data | <σ_z value> | factor (a) shrinks from 1.6×`; flip
+  `offsite_full_data | <σ_z value> | factor (a) shrinks from 1.6×`; flip
   factor (a) status in "Three sources of disagreement" table.
 - **On slab K2D(l) shape RMSE < 10%** (playbook S5): flip frontmatter
   `status: partially-resolved` → `resolved-by-slab-validation`; append
@@ -74,7 +74,7 @@ When senior data arrives:
 - **On slab K2D,max measurement** (playbook S7): if ratios differ from
   PPT 12705:875:362, append row `slab_K2D_max | <numbers>`; new ADR 009
   if confirmed.
-- **On metadata: senior ξ_RL fit was fixed-h slab** (playbook S8): drop
+- **On metadata: off-site collaborator ξ_RL fit was fixed-h slab** (playbook S8): drop
   factor (c) from "Three sources of disagreement" table; simplify essay
   v2 §4.4 narrative pointer.
 - **On reflection BC implementation in derivation/06**: append row with

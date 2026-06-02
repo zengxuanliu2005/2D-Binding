@@ -143,22 +143,25 @@ related_decisions: [adr_id, ...]
 | 2026-06-02 | session5_b2_1_2_3                 | theory   | WLC MC + P_z(z) + K2D(l) all three steps green |
 | 2026-06-02 | session6_b2_4_5                   | theory   | B2.4 ratio test beats Xu 8-14×; B2.5 anchor-cone surcharge +3.8 kBT for rigid |
 | 2026-06-02 | session6c_cluster_prep_audit      | infra    | analyze_slab_traj.py implemented (K100 pilot 19% off target); 18 results md now Tier 2 FM; B2 chain completeness snapshot |
+| 2026-06-02 | session7_double_loop_protocol     | infra    | run_config.sh + SBATCH wrapper + release_bundle.sh + ADR 007 Loop 2 playbook |
+| 2026-06-02 | session8_repo_cleanup             | infra    | Removed person references repo-wide; promoted Step 5 SBATCH; round 1+2 diagnosis+verdict; 4 new index READMEs; comprehensive README audit |
 
 ### Decisions
 | adr_id | slug | status | summary |
 |---|---|---|---|
-| 001 | lc_12nm_ecto_convention             | accepted | Lc = 12 nm (ecto only) for WLC theory pending senior confirmation |
+| 001 | lc_12nm_ecto_convention             | accepted | Lc = 12 nm (ecto only) for WLC theory pending off-site collaborator confirmation |
 | 002 | phys_env_local_only_on_cluster      | accepted | Don't require phys env on cluster; use system base python |
 | 003 | hard_gate_kernel_first              | accepted | B2.3 uses hard cutoff kernel; soft Boltzmann is a future swap |
 | 004 | z_negative_truncation               | accepted | Drop WLC samples with z < 0 (unphysical chain-through-membrane) |
-| 005 | double_loop_io_dirs                 | accepted | cluster/{trial/,}outputs|results/ for round-trip with user + senior |
+| 005 | double_loop_io_dirs                 | accepted | cluster/{trial/,}outputs|results/ for round-trip with user + off-site collaborator |
 | 006 | purpose_banner_runtime_print        | accepted | All user-facing scripts print PURPOSE banner on entry |
+| 007 | loop2_b_revision_playbook           | accepted | Loop 2 decision tree mapping off-site full-data results → derivation / calibration / open_question updates |
 
 ### Calibration
 | topic | status | summary |
 |---|---|---|
 | b2_vs_measured_xi_rl       | partially-resolved | B2.4 absolute 1.3-1.9× over, ratio test rigid:flex = 0.39 vs measured 0.30 (Xu 1.00, 229% off) |
-| b2_vs_pptx_re              | open | WLC √⟨R²⟩ under-predicts senior PPT Re by 9-21% |
+| b2_vs_pptx_re              | open | WLC √⟨R²⟩ under-predicts off-site collaborator PPT Re by 9-21% |
 | closure_methods_consensus  | open | 5 methods within 0.22 kBT consensus on flex-rigid; semi/flex disputed by L_c |
 | fconf_three_way            | open | B2.5 reveals anchor-cone surcharge +3.8/+1.2/-0.04 kBT (rigid/semi/flex) that MS misses |
 | b2_chain_completeness      | resolved | B2 chain 18/20 acceptance checks pass; 2 documented physical caveats (σ_z 1.8× wider, semi:flex inversion from truncation) |

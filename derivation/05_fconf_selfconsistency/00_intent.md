@@ -23,7 +23,7 @@ For each same-system R-L pair we compute
   F_conf^(B2)(D) = −ln P_z(D; lp, Lc, k_a)                          (00.1)
 
 at the measured bound-chain vertical reach D_bound (from
-`results/closure_wlc_three_term.md`, taken straight out of the senior's
+`results/closure_wlc_three_term.md`, taken straight out of the the off-site
 chain_coords MD extracts). Then we form the cross-system pair table
 
   ΔΔF_conf^(B2)(A − B) = F^(B2)_A(D_A) − F^(B2)_B(D_B)              (00.2)
@@ -31,7 +31,7 @@ chain_coords MD extracts). Then we form the cross-system pair table
 and compare against three reference values for each of the three pairs:
 
 - ΔΔF_conf^(MS, B1) — Marko-Siggia (chain stretching only), from B1
-- ΔΔF_sum^(PPT s25) — senior's 3-term closure total (trans + rot + MS)
+- ΔΔF_sum^(PPT s25) — the off-site 3-term closure total (trans + rot + MS)
 
 The headline output is the **anchor-cone surcharge** per system:
 
@@ -49,7 +49,7 @@ integrated WLC for F_conf, with D_bound from our own MD extracts and
 Lc = 12 nm from CLAUDE.md. The resulting ΔΔF_sum gave 5.23 / 2.05 /
 -3.18 kBT, versus the PPT's reported 3.64 / 2.47 / -1.18 kBT — a 1.5
 -2 kBT shift per pair attributed to "system-specific implicit L_c"
-the senior may have used (essay §4.6 / B1 commit message).
+the off-site collaborator may have used (essay §4.6 / B1 commit message).
 
 B2.5 tests an independent angle on the same F_conf: use B2's WLC z-marginal P_z directly. If the two estimators agree, the PPT
 discrepancy is explained by L_c / data-set differences alone. If they
@@ -69,9 +69,9 @@ rigid (Δ = +3.79 kBT). The pattern is unambiguous and mechanistic.
   F_conf. Both have known biases — MS misses the anchor cone, B2 has
   σ_z too wide (derivation/02 Q2). The point is to QUANTIFY the
   disagreement and locate it physically.
-- It does NOT touch the L_c question (whether senior used Lc=12 or
+- It does NOT touch the L_c question (whether off-site collaborator used Lc=12 or
   Lc=25). That investigation lives in log/sessions/2026-06-02_session5_b2_1_2_3.md
-  and is awaiting senior's reply on PPT s25 conventions.
+  and is awaiting the collaborator's reply on PPT s25 conventions.
 
 ## Acceptance criteria
 

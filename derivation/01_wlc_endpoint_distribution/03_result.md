@@ -5,7 +5,7 @@ date: 2026-06-01
 summary: "03_result — Discrete WLC P(R; lp, Lc): numerical result + limit checks (01_wlc_endpoint_distribution)"
 derivation_folder: 01_wlc_endpoint_distribution
 step: result
-inputs: 01_setup.md (1.1)–(1.7); scripts/k2d_l_wlc_theory.py; xi_rl_candidates.LP_PHD; senior's PPT Re values
+inputs: 01_setup.md (1.1)–(1.7); scripts/k2d_l_wlc_theory.py; xi_rl_candidates.LP_PHD; the source PPT Re values
 outputs: tables (3.1)–(3.3) and `results/derivation_b2/wlc_endpoint_distribution.npz`
 agent_read_when:
   - working on 01_wlc_endpoint_distribution or its successor
@@ -67,7 +67,7 @@ across all three lp values is the main acceptance result for B2.1 (criterion
 
 ## Self-consistency check (3.3) — MC √⟨R²⟩ vs measured Re
 
-The senior's PPT slide 16 lists "Re,unbound" for the full-complex chains
+The the source PPT slide 16 lists "Re,unbound" for the full-complex chains
 (transmembrane + ecto): 14.76 / 11.65 / 5.66 nm for rigid / semi / flex.
 
 | label | √⟨R²⟩_MC (nm) | Re_PPT (nm) | %diff |
@@ -81,7 +81,7 @@ from 00_intent.md). Two physical origins, both discussed in
 05_open_questions.md:
 
 1. **PPT Re is for the FULL chain (TM + ecto), Lc ≈ 25 nm**. Our WLC uses
-   ecto-only Lc = 12 nm to match the senior's S1-S23 framework (CLAUDE.md
+   ecto-only Lc = 12 nm to match the S1-S23 framework (CLAUDE.md
    convention "12 bonds × 1.0 σ"). Repeating MC with Lc = 25 nm pushes
    √⟨R²⟩_MC up to 24.5 / 19.4 / 6.8 nm — overshoots PPT for rigid/semi but
    matches flex (since flex barely grows with longer Lc).
@@ -91,7 +91,7 @@ from 00_intent.md). Two physical origins, both discussed in
    below PPT.
 
 Neither correction fully closes the gap; the residual is most likely the
-**ecto/TM split convention**. Until we agree with the senior on which
+**ecto/TM split convention**. Until we agree with the off-site collaborator on which
 chain segment lp parameterises (slide 23 implies full chain, slide 18
 suggests ecto only), this 17-20 % is a known offset.
 

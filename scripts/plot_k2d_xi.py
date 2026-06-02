@@ -1,4 +1,4 @@
-"""Plot K2D(ξ⊥) prediction overlaid on senior's slab simulation data."""
+"""Plot K2D(ξ⊥) prediction overlaid on the off-site slab simulation data."""
 from __future__ import annotations
 
 from pathlib import Path

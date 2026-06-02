@@ -1,12 +1,12 @@
 #!/bin/bash
 ###############################################################################
-#  cluster/release_bundle.sh — pack cluster/ for senior, close Loop 1
+#  cluster/release_bundle.sh — pack cluster/ for off-site full-data run, close Loop 1
 #
 #  Run LOCALLY from the repo root AFTER trial loop converges (i.e., after
 #  cluster/trial/results/<date>_round<N>_verdict.md says "all green").
 #
-#  Packs cluster/ into a tarball ready to send to senior via WeChat/email,
-#  excluding the Loop 1 / Loop 2 working directories that senior doesn't
+#  Packs cluster/ into a tarball ready to send for off-site run via WeChat/email,
+#  excluding the Loop 1 / Loop 2 working directories that off-site collaborator doesn't
 #  need (trial/, outputs/, results/).
 #
 #  Usage:
@@ -15,7 +15,7 @@
 #      bash cluster/release_bundle.sh --force        # skip trial-verdict check
 #
 #  Logs each release in cluster/RELEASES.md so the user can track which git
-#  SHA the senior actually got.
+#  SHA the off-site collaborator actually got.
 ###############################################################################
 set -euo pipefail
 
@@ -39,7 +39,7 @@ cat <<'BAN'
 ╚════════════════════════════════════════════════════════════════════╝
 PURPOSE
 ─────────
-Packs cluster/ into a tarball senior can unpack on her server. Excludes
+Packs cluster/ into a tarball off-site collaborator can unpack on her server. Excludes
 the validation / round-tripping infrastructure she doesn't need.
 BAN
 
@@ -83,12 +83,12 @@ fi
 echo
 echo "--- step 3: build exclude list ---"
 EXCLUDES=(
-    "cluster/trial"                  # validation harness; not for senior
-    "cluster/outputs"                # Loop 2 data; senior writes her own
+    "cluster/trial"                  # validation harness; not for off-site full-data run
+    "cluster/outputs"                # Loop 2 data; off-site collaborator writes her own
     "cluster/results"                # Loop 2 analysis; we write
-    "cluster/bundle_for_senior"      # legacy directory (refactored away)
+    "cluster/off-site analysis bundle"      # legacy directory (refactored away)
     "cluster/.gitignore"             # not needed in tarball
-    "cluster/release_bundle.sh"      # we release; senior doesn't
+    "cluster/release_bundle.sh"      # we release; off-site collaborator doesn't
     ".DS_Store"                      # macOS metadata
 )
 for E in "${EXCLUDES[@]}"; do
@@ -125,14 +125,14 @@ RELEASES_MD="cluster/RELEASES.md"
 if [[ ! -f "$RELEASES_MD" ]]; then
     cat > "$RELEASES_MD" <<EOF
 ---
-purpose: "Log of cluster bundle releases sent to senior (Loop 1 → Loop 2 transitions)"
-audience: user (sent which version when) + Claude (provenance for incoming senior data)
+purpose: "Log of cluster bundle releases sent to off-site collaborator (Loop 1 → Loop 2 transitions)"
+audience: user (sent which version when) + Claude (provenance for incoming off-site full-data results)
 status: current
 ---
 
-# cluster/RELEASES.md — bundle releases sent to senior
+# cluster/RELEASES.md — bundle releases sent to off-site collaborator
 
-Each row is a tarball sent to senior. Maps tarball → git SHA + trial verdict
+Each row is a tarball sent to off-site collaborator. Maps tarball → git SHA + trial verdict
 that authorized this release. When her distilled results return, the analysis
 in \`cluster/results/<date>_round<N>_analysis.md\` should reference the
 release row here so we can recover exactly which script versions she ran.
@@ -154,9 +154,9 @@ echo "==========================================================="
 echo "  ✓ Release complete"
 echo "==========================================================="
 echo "Next steps:"
-echo "  1. Send $TARBALL to senior via WeChat / email"
-echo "  2. (optional) git add cluster/RELEASES.md && git commit -m \"release: $RELEASE_DATE bundle to senior\""
-echo "  3. Wait for senior to return cluster-distilled.tgz (~1-2 h on her end)"
+echo "  1. Send $TARBALL via WeChat / email"
+echo "  2. (optional) git add cluster/RELEASES.md && git commit -m \"release: $RELEASE_DATE bundle to off-site collaborator\""
+echo "  3. Wait for off-site full-data run to return cluster-distilled.tgz (~1-2 h on her end)"
 echo "  4. When received: mkdir cluster/outputs/\$(date -I)_round1 &&"
 echo "     tar xzf cluster-distilled.tgz -C cluster/outputs/\$(date -I)_round1/ --strip-components 1"
 echo "  5. Apply Loop 2 protocol (log/decisions/007): write"

@@ -5,11 +5,11 @@ date: 2026-06-02
 last_updated: 2026-06-02
 summary: "Running comparison of F_conf via three estimators: B1 Marko-Siggia (chain stretch only), B2.5 -ln P_z (membrane-anchored), PPT s25 closure total — reveals anchor-cone surcharge +3.8 kBT for rigid"
 prediction_source: "derivation/05_fconf_selfconsistency F_conf^(B2); B1 Marko-Siggia integrated WLC"
-measurement_source: "PPT s25 closure total + senior's measured ΔΔF_K2D (raw partition)"
+measurement_source: "PPT s25 closure total + the measured ΔΔF_K2D (raw partition)"
 agreement_summary: "B2 and MS agree on flex (Δ < 0.05 kBT), disagree on rigid by 3.8 kBT (anchor-cone surcharge)"
 next_check_when:
   - cluster slab MD returns measured F_conf via constrained-h Boltzmann inversion
-  - senior bundle full-data returns chain_coords with bias-free D_bound
+  - full-data analysis bundle returns chain_coords with bias-free D_bound
   - reflection BC replaces z<0 truncation (would shift flex by ~0.5 kBT)
 related_decisions: [001, 004]
 related_sessions: [session5_b2_1_2_3, session6_b2_4_5]
@@ -27,7 +27,7 @@ agent_read_when:
 |---|---|---:|---:|---:|---|
 | 2026-06-02 | B2.5 -ln P_z (this work) | **+3.91 ± 0.08** | **+2.02 ± 0.02** | **+3.34 ± 0.03** | session6_b2_4_5 |
 | 2026-06-02 | B1 Marko-Siggia (Lc=12) | +0.13 | +0.80 | +3.38 | session1_a1_a3_b1 |
-| (target)   | PPT s25 closure F_conf (implicit) | ? | ? | ? | senior bundle pending |
+| (target)   | PPT s25 closure F_conf (implicit) | ? | ? | ? | full-data analysis bundle pending |
 
 Anchor-cone surcharge Δ_anchor = F^(B2) − F^(MS):
 
@@ -81,7 +81,7 @@ narrative for essay v2 §5.3.
 
 ## What would resolve
 
-- **Senior bundle full-data F_conf**: would tell us whether MS or B2
+- **Full-data analysis bundle full-data F_conf**: would tell us whether MS or B2
   is closer to the "true" PPT s25 F_conf for each system. Pending
   bundle return.
 - **Cluster slab D_bound**: removes A1 sampling bias from D_bound.
@@ -93,12 +93,12 @@ narrative for essay v2 §5.3.
 
 ## Action triggers (per playbook log/decisions/007)
 
-When senior data arrives:
+When off-site full-data results arrives:
 
 - **On σ(R_z) rigid > 0.55 nm** → playbook S3: B2.2 σ_z calibration
   resolves; this means re-running `scripts/fconf_b2_selfconsistency.py`
-  with senior's σ_z gives potentially shifted F_conf values; append row
-  "B2.5 + senior_σ_z" with new numbers; note that Δ_anchor magnitude is
+  with the off-site σ_z gives potentially shifted F_conf values; append row
+  "B2.5 + offsite_σ_z" with new numbers; note that Δ_anchor magnitude is
   what matters for the narrative — the absolute B2 F_conf may shift but
   the rigid/flex monotone trend should persist.
 - **On per-system k_a > 10% spread** → playbook S4: re-derive B2.2 with

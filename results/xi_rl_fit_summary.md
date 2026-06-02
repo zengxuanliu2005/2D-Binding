@@ -1,5 +1,5 @@
 ---
-purpose: "Senior K2D(ξ⊥) Gaussian fit → fitted ξ_RL per system (auto-generated)"
+purpose: "Off-site collaborator K2D(ξ⊥) Gaussian fit → fitted ξ_RL per system (auto-generated)"
 audience: "essay v2 §4.4 + B2.4 measured reference"
 status: current
 generated_by: scripts/xi_rl_decomposition.py

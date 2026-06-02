@@ -14,7 +14,7 @@
 #    (b) finds the three system directories (K100 / K10 / K01)
 #    (c) counts replicas per system — KEY QUESTION: do YOU have s002+?
 #         If yes, we can run a mini §0 data-volume test on YOUR data,
-#         independent of waiting for senior.
+#         independent of waiting for off-site full-data run.
 #    (d) sanity-checks one s001 has the expected files (traj.xyz, mol.psf,
 #         num_bonds_for_xyz_frames.dat) so downstream extract works.
 #
@@ -56,7 +56,7 @@ This script:
   (b) finds the three system directories (K100 / K10 / K01) on cluster
   (c) counts replicas per system → KEY QUESTION: do YOU have s002+?
         If yes, we can run a mini §0 data-volume test on YOUR data,
-        independent of waiting for senior's bundle reply.
+        independent of waiting for the off-site analysis bundle reply.
   (d) sanity-checks one s001 has the expected files (traj.xyz, mol.psf,
         num_bonds_for_xyz_frames.dat) so downstream extract works.
 
@@ -99,7 +99,7 @@ HITS=$(find /mnt/nfs/ugstu/liuzx -maxdepth 3 -type d 2>/dev/null \
        | grep -iE '120x120|EPS05|K100|K10|K01|2D-Binding|2D_Binding')
 if [[ -z "$HITS" ]]; then
     fail "no system directories found under /mnt/nfs/ugstu/liuzx"
-    warn "Tell Claude where your MD outputs actually live so paths can be fixed."
+    warn "Report where your MD outputs actually live so paths can be fixed."
 else
     echo "$HITS" | head -30 | sed 's/^/     /'
     N_HITS=$(echo "$HITS" | wc -l | tr -d ' ')
@@ -132,10 +132,10 @@ echo "$INVENTORY_RAW" | awk -F/ '
 
 if [[ "$N_REP_TOTAL" -le 3 ]]; then
     warn "≤3 replicas total — you probably only have s001 per system."
-    warn "  → §0 data-volume test depends entirely on senior's bundle run."
+    warn "  → §0 data-volume test depends entirely on the off-site analysis bundle run."
 elif [[ "$N_REP_TOTAL" -ge 6 ]]; then
     ok "$N_REP_TOTAL replicas — you have continuation data!"
-    ok "  → we can run a mini §0 test on YOUR data without waiting for senior."
+    ok "  → we can run a mini §0 test on YOUR data without waiting for off-site full-data run."
 fi
 
 # sanity check: pick the first s001 we find and look for expected files
@@ -164,7 +164,7 @@ if [[ "$FAILED" -eq 0 ]]; then
     cat <<EOF
    ✓✓✓  Inventory complete.
 
-   Tell Claude:
+   Report:
      • Total replica count: $N_REP_TOTAL
      • Per-system breakdown (the table above)
      • The exact directory names for the 3 systems (the matching lines)
@@ -177,9 +177,9 @@ else
    ✗  Some checks failed. Most likely fixes:
 
      • NFS not mounted on this node → try another login node
-     • Directory names differ from K100/K10/K01 — tell Claude the actual names
+     • Directory names differ from K100/K10/K01 — report the actual names
      • Missing file in s001 (traj.xyz / mol.psf / num_bonds_for_xyz_frames.dat)
-       → likely a different naming convention; tell Claude what's there instead
+       → likely a different naming convention; report what's there instead
 
    Send the full output to Claude regardless.
 EOF

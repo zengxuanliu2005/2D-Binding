@@ -5,14 +5,14 @@ date: 2026-06-02
 summary: 05_open_questions — caveats and the carry-forward to derivation/04 (03_k2d_l_kernel)
 derivation_folder: 03_k2d_l_kernel
 step: open_questions
-inputs: 03_result.md tables; B2.2 σ_z values; senior's PPT slide 5
+inputs: 03_result.md tables; B2.2 σ_z values; the source PPT slide 5
 outputs: punch list ordered by impact on derivation/04
 agent_read_when:
   - working on 03_k2d_l_kernel or its successor
   - need to know the open_questions of this derivation step
 ---
 
-> **Loop 2 revision protocol**: see `log/decisions/007_loop2_b_revision_playbook.md` for the explicit decision tree mapping senior-data observations → which Q here gets closed / refined and which calibration row to flip.
+> **Loop 2 revision protocol**: see `log/decisions/007_loop2_b_revision_playbook.md` for the explicit decision tree mapping off-site data observations → which Q here gets closed / refined and which calibration row to flip.
 
 # 05_open_questions — caveats and the carry-forward to derivation/04
 
@@ -53,7 +53,7 @@ naïvely be a monotone ordering.
     Requires modifying the WLC MC sampler in derivation/01 — significant.
 3. Use the existing truncation but document that the σ_K2D measured here
     is the **truncation-conditional** σ_K2D, which captures the same
-    physics as the senior's measured K2D(l) from her constrained-h MD
+    physics as the the measured K2D(l) from her constrained-h MD
     (where the chain also cannot pass through).
 
 Pragmatic choice: option 3 + clear documentation. The measured ξ_RL

@@ -1,17 +1,17 @@
 #!/bin/bash
 ###############################################################################
-#  cluster/slurm/full_analysis.slurm — SBATCH wrapper for senior's full run
+#  cluster/slurm/full_analysis.slurm — SBATCH wrapper for full-data analysis run
 #
-#  PRIMARY entry point for the senior-side bundle. Wraps the existing
+#  PRIMARY entry point for the full-data analysis bundle. Wraps the existing
 #  cluster/run_analysis.sh orchestrator inside a SLURM-managed job so the
-#  senior's workflow is exactly:
+#  the full-data analysis workflow is exactly:
 #
-#      vim cluster/SENIOR_CONFIG.sh      # edit MD_PARENT etc.
+#      vim cluster/run_config.sh      # edit MD_PARENT etc.
 #      sbatch cluster/slurm/full_analysis.slurm
 #
 #  All knobs (partition, time, memory, parallelism) come from
-#  cluster/SENIOR_CONFIG.sh. The #SBATCH directives below are sane defaults;
-#  if your cluster needs different headers, edit SLURM_* in SENIOR_CONFIG.sh
+#  cluster/run_config.sh. The #SBATCH directives below are sane defaults;
+#  if your cluster needs different headers, edit SLURM_* in run_config.sh
 #  and re-submit (the wrapper re-reads the config inside the job).
 ###############################################################################
 
@@ -24,21 +24,21 @@
 #SBATCH --mem=32G
 #SBATCH -t 24:00:00
 # NOTE: If your cluster requires a specific node, add `#SBATCH -w n01` (or
-# override SLURM_NODE in SENIOR_CONFIG.sh and resubmit).
+# override SLURM_NODE in run_config.sh and resubmit).
 
 set -uo pipefail
 
 cat <<'BAN'
 ╔════════════════════════════════════════════════════════════════════╗
-║  cluster/slurm/full_analysis.slurm — senior's full-data analysis  ║
+║  cluster/slurm/full_analysis.slurm — the off-site full-data analysis  ║
 ╚════════════════════════════════════════════════════════════════════╝
 PURPOSE
 ─────────
-SLURM-wrapped run of cluster/run_analysis.sh. Walks senior's MD data,
+SLURM-wrapped run of cluster/run_analysis.sh. Walks the off-site MD data,
 extracts chain_coords per replica, merges per system, runs 4 analyses
 + reconcile_methods, distills outputs to ~5 MB tarball ready for return.
 
-CONFIG sourced from cluster/SENIOR_CONFIG.sh — edit there, not here.
+CONFIG sourced from cluster/run_config.sh — edit there, not here.
 BAN
 
 # Job preamble
@@ -52,15 +52,15 @@ echo "==========================================================="
 SUBMIT_DIR="${SLURM_SUBMIT_DIR:-$(pwd)}"
 cd "$SUBMIT_DIR"
 
-if [[ ! -f cluster/SENIOR_CONFIG.sh ]]; then
-    echo "ERROR: cluster/SENIOR_CONFIG.sh not found at $SUBMIT_DIR/cluster/"
+if [[ ! -f cluster/run_config.sh ]]; then
+    echo "ERROR: cluster/run_config.sh not found at $SUBMIT_DIR/cluster/"
     echo "       Submit from the bundle root (the dir containing cluster/)."
     exit 2
 fi
 
 # Source config (defines MD_PARENT, SYSTEMS_DIRS[], N_JOBS, N_BOOTSTRAP, PY_ENVS[], etc.)
 # shellcheck disable=SC1091
-source cluster/SENIOR_CONFIG.sh
+source cluster/run_config.sh
 echo
 echo "[config]  MD_PARENT=$MD_PARENT"
 echo "[config]  SYSTEMS_DIRS=(${SYSTEMS_DIRS[*]})"
@@ -69,7 +69,7 @@ echo "[config]  N_JOBS=$N_JOBS  N_BOOTSTRAP=$N_BOOTSTRAP"
 # Validate MD_PARENT
 if [[ ! -d "$MD_PARENT" ]]; then
     echo "ERROR: MD_PARENT ($MD_PARENT) is not a directory."
-    echo "       Edit cluster/SENIOR_CONFIG.sh and resubmit."
+    echo "       Edit cluster/run_config.sh and resubmit."
     exit 3
 fi
 
@@ -101,12 +101,12 @@ if [[ -z "$ACTIVATED" ]]; then
     which python
     python -c "import numpy, scipy, pandas, matplotlib" || {
         echo "ERROR: required packages (numpy/scipy/pandas/matplotlib) not available."
-        echo "       Edit PY_ENVS in cluster/SENIOR_CONFIG.sh or pip install --user."
+        echo "       Edit PY_ENVS in cluster/run_config.sh or pip install --user."
         exit 4
     }
 fi
 
-# Hand off to bash orchestrator. It also sources SENIOR_CONFIG.sh internally,
+# Hand off to bash orchestrator. It also sources run_config.sh internally,
 # but the env vars from this shell already propagate.
 echo
 echo "--- handing off to cluster/run_analysis.sh ---"

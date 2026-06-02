@@ -5,7 +5,7 @@ date: 2026-06-02
 last_updated: 2026-06-02
 summary: "B2 推导链 5/5 全部通过验收 (modulo 4 documented exceptions); atomic snapshot of acceptance criterion × actual result per step"
 prediction_source: "derivation/01..05/00_intent.md (acceptance criteria) → derivation/01..05/03_result.md (actual)"
-measurement_source: "self-consistency (rigid/Gaussian limits); senior measurements (PPT slide 5 + measured ξ_RL)"
+measurement_source: "self-consistency (rigid/Gaussian limits); off-site collaborator measurements (PPT slide 5 + measured ξ_RL)"
 agreement_summary: "17/19 individual checks pass; 2 fail (B2.3 monotone σ_K2D inverted on semi:flex, B2.2 σ_z 1.8× wider than measured) — both with documented physical root cause"
 next_check_when:
   - cluster slab MD K2D(l) data arrives (would tighten K10/K01 absolute K2D)
@@ -110,7 +110,7 @@ derivation/05_fconf_selfconsistency
 **B2.2 Q2 (σ_z 1.8× wider)** — either:
 - Replace WLC P_z with KDE of measured z_lab from chain_coords MD
   (option 1 in 02/05 Q2)
-- OR senior bundle full-data σ(R_z) returns much larger than the
+- OR full-data analysis bundle full-data σ(R_z) returns much larger than the
   0.35 nm in PPT slide 5 → calibration auto-resolves (Conflict Map S3)
 
 **B2.3 Q2 (monotone σ_K2D inverted)** — replace z<0 truncation with
@@ -125,7 +125,7 @@ Both resolutions are deferred to:
 
 ## Action triggers (per playbook log/decisions/007)
 
-When senior bundle distilled returns to `cluster/outputs/<date>_round<N>/`:
+When full-data analysis bundle distilled returns to `cluster/outputs/<date>_round<N>/`:
 
 - **On σ(R_z) rigid > 0.55 nm** → playbook S3: this calibration's row for
   B2.2 criterion 3 flips ✗ → ✓; chain-level `summary` updates from 18/20 to

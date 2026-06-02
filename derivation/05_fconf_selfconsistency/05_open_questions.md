@@ -12,7 +12,7 @@ agent_read_when:
   - planning to integrate cluster slab data or revised D_bound
 ---
 
-> **Loop 2 revision protocol**: see `log/decisions/007_loop2_b_revision_playbook.md` for the explicit decision tree mapping senior-data observations → which Q here gets closed / refined and which calibration row to flip.
+> **Loop 2 revision protocol**: see `log/decisions/007_loop2_b_revision_playbook.md` for the explicit decision tree mapping off-site data observations → which Q here gets closed / refined and which calibration row to flip.
 
 # 05_open_questions — caveats and the carry-forward
 
@@ -138,4 +138,4 @@ Acceptance criteria from 00_intent.md (all four passed):
   should include it
 - log/calibration/fconf_three_way.md — running comparison table
 - B2 completes (B2.1 → B2.5). Next workstream: cluster Round 2 trial
-  outputs (when user uploads) + senior bundle data return.
+  outputs (when user uploads) + full-data analysis bundle data return.

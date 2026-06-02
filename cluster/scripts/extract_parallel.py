@@ -12,7 +12,7 @@ any non-trivial replica list.
 
 CONTEXT
 =======
-Called by bundle_for_senior/run_full_analysis.sh. Each row in stdin is one
+Called by (removed legacy dir)run_full_analysis.sh. Each row in stdin is one
 replica to extract; the script fans those out to N_JOBS workers.
 
 ENV
@@ -64,7 +64,7 @@ def main() -> int:
 
     print(f"""
 ╔════════════════════════════════════════════════════════════════════╗
-║  bundle_for_senior/src/extract_parallel.py                        ║
+║  (removed legacy dir)src/extract_parallel.py                        ║
 ║  Parallel extract of chain_coords across replicas                  ║
 ╚════════════════════════════════════════════════════════════════════╝
    tasks  : {len(tasks)}
