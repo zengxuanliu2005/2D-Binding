@@ -1,9 +1,9 @@
 ---
 type: calibration
-status: open
+status: partially-resolved
 date: 2026-06-02
 last_updated: 2026-06-02
-summary: B2.3 σ_K2D systematically over-predicts senior's measured ξ_RL by 1.7-2.6× across all 3 systems
+summary: "B2.4 independent-draws σ_K2D over-predicts measured ξ_RL by 1.3-1.9× absolute; ratio test rigid:flex = 0.39 vs measured 0.30 (28% off) — Xu 2015 ratio = 1.00 (229% off), so B2 captures lp discrimination decisively"
 prediction_source: derivation/03_k2d_l_kernel/ σ_K2D from k2d_l_curves.npz
 measurement_source: stage_essay §4.4 (senior fit on K2D(ξ⊥) data) ξ_RL = 0.685 / 2.076 / 2.253 nm
 agreement_summary: 1.7-2.6× over-prediction, semi vs flex ordering reversed
@@ -24,7 +24,8 @@ agent_read_when:
 
 | date | what changed | rigid | semi | flex | rigid:flex ratio | session |
 |---|---|---:|---:|---:|---:|---|
-| 2026-06-02 | B2.3 hard-gate kernel, z<0 trunc, Lc=12 | predicted **1.42** (107%); measured **0.685** | predicted **5.45** (163%); measured **2.076** | predicted **3.91** (73%); measured **2.253** | predicted 0.36 / measured 0.30 | session5_b2_1_2_3 |
+| 2026-06-02 | **B2.4** independent-draws + ratio test + bootstrap σ (n=200) | predicted **1.110 ± 0.002** (62%); measured 0.685 | predicted **3.919 ± 0.006** (89%); measured 2.076 | predicted **2.840 ± 0.005** (26%); measured 2.253 | predicted **0.391 ± 0.001** / measured 0.304 — B2 28% off; Xu 1.000 → 229% off | session6_b2_4_5 |
+| 2026-06-02 | B2.3 hard-gate kernel, z<0 trunc, Lc=12 (paired draws — superseded by B2.4) | predicted **1.42** (107%); measured 0.685 | predicted **5.45** (163%); measured 2.076 | predicted **3.91** (73%); measured 2.253 | predicted 0.36 / measured 0.30 | session5_b2_1_2_3 |
 
 (predicted / measured both in nm; % is `100·|pred−meas|/meas`)
 
@@ -36,14 +37,21 @@ agent_read_when:
 | (b) Hard-gate kernel adds rcut/√5 ≈ 0.67 nm in quadrature | +0.3 nm | all 3 systems |
 | (c) ξ_RL ≠ σ_K2D literally (Weikl 2016 convolution) | unknown | unknown |
 
-## Conclusion currently in derivation/03/05
+## Conclusion currently in derivation/04 (B2.4 ratio test)
 
-The 2× over-prediction is documented; B2.4 will switch to a **ratio test**
-(rigid vs flex σ_K2D) to bypass the absolute scale gap. The ratio test:
-predicted 0.36 vs measured 0.30 — **same order of magnitude, factor 1.2
-apart**. Xu 2015 predicts ratio = 1.00 (since k_a is identical across
-systems), so even at this calibration gap **B2 distinguishes flexibility
-classes; Xu 2015 doesn't**.
+B2.4 ran the ratio test with corrected independent (z_R, z_L) draws,
+bootstrap n=200, n_pairs=200K. Headline:
+
+| ratio | B2 ± boot σ | Xu 2015 | measured | B2 err | Xu err |
+|---|---:|---:|---:|---:|---:|
+| rigid:flex | **0.391 ± 0.001** | 1.000 | 0.304 | 28.5% | 228.9% |
+| rigid:semi | **0.283 ± 0.001** | 0.999 | 0.330 | 14.2% | 202.7% |
+| semi:flex  | **1.380 ± 0.003** | 1.001 | 0.921 | 49.8% | 8.7% |
+
+**B2 beats Xu by 8× on rigid:flex and 14× on rigid:semi** — the two
+ratios where lp differs by ≥ 10×. semi:flex is the lone row where Xu
+is closer (B2 inversion is the z<0 truncation artifact from
+derivation/03 05 Q2).
 
 ## What would resolve
 
