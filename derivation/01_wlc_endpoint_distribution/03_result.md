@@ -1,10 +1,18 @@
-# 03_result — Discrete WLC P(R; lp, Lc): numerical result + limit checks
+---
+type: derivation
+status: accepted
+date: 2026-06-01
+summary: "03_result — Discrete WLC P(R; lp, Lc): numerical result + limit checks (01_wlc_endpoint_distribution)"
+derivation_folder: 01_wlc_endpoint_distribution
+step: result
+inputs: 01_setup.md (1.1)–(1.7); scripts/k2d_l_wlc_theory.py; xi_rl_candidates.LP_PHD; senior's PPT Re values
+outputs: tables (3.1)–(3.3) and `results/derivation_b2/wlc_endpoint_distribution.npz`
+agent_read_when:
+  - working on 01_wlc_endpoint_distribution or its successor
+  - need to know the result of this derivation step
+---
 
-> **Status**: accepted
-> **Date**: 2026-06-01
-> **Author**: Claude (Opus 4.7)
-> **Inputs**: 01_setup.md (1.1)–(1.7); scripts/k2d_l_wlc_theory.py; xi_rl_candidates.LP_PHD; senior's PPT Re values
-> **Outputs**: tables (3.1)–(3.3) and `results/derivation_b2/wlc_endpoint_distribution.npz`
+# 03_result — Discrete WLC P(R; lp, Lc): numerical result + limit checks
 
 ## What this step delivers
 

@@ -1,10 +1,18 @@
-# 05_open_questions — What B2.1 left unsolved
+---
+type: derivation
+status: accepted
+date: 2026-06-01
+summary: 05_open_questions — What B2.1 left unsolved (01_wlc_endpoint_distribution)
+derivation_folder: 01_wlc_endpoint_distribution
+step: open_questions
+inputs: 03_result.md observations (3.2) and (3.3)
+outputs: prioritised punch list for next rounds
+agent_read_when:
+  - working on 01_wlc_endpoint_distribution or its successor
+  - need to know the open_questions of this derivation step
+---
 
-> **Status**: accepted
-> **Date**: 2026-06-01
-> **Author**: Claude (Opus 4.7)
-> **Inputs**: 03_result.md observations (3.2) and (3.3)
-> **Outputs**: prioritised punch list for next rounds
+# 05_open_questions — What B2.1 left unsolved
 
 ## Q1 — Ecto vs full chain Lc disagreement with senior's PPT Re
 

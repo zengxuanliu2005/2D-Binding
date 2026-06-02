@@ -1,10 +1,18 @@
-# 04_numerics — implementation choices for the z-marginal
+---
+type: derivation
+status: accepted
+date: 2026-06-02
+summary: 04_numerics — implementation choices for the z-marginal (02_z_marginal)
+derivation_folder: 02_z_marginal
+step: numerics
+inputs: scripts/k2d_l_wlc_theory.py; derivation/02 eqs. (1.1)–(1.8)
+outputs: tables (4.1)–(4.2); code → derivation mapping
+agent_read_when:
+  - working on 02_z_marginal or its successor
+  - need to know the numerics of this derivation step
+---
 
-> **Status**: accepted
-> **Date**: 2026-06-02
-> **Author**: Claude (Opus 4.7)
-> **Inputs**: scripts/k2d_l_wlc_theory.py; derivation/02 eqs. (1.1)–(1.8)
-> **Outputs**: tables (4.1)–(4.2); code → derivation mapping
+# 04_numerics — implementation choices for the z-marginal
 
 ## Code anchor
 

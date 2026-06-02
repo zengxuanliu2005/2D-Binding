@@ -1,3 +1,9 @@
+---
+purpose: 'Convention: Claude writes <date>_analysis.md per round of senior-side data'
+audience: Claude (writes); user (reads conclusions)
+status: current
+---
+
 # cluster/results/ — Claude writes senior-side analysis conclusions here
 
 ## Purpose

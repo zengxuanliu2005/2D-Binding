@@ -1,3 +1,10 @@
+---
+purpose: 'A1 diagnosis: rigid 22% K2D gap is unbound-sampling selection bias, not
+  discretization'
+audience: essay v2 author + Claude (for §4.5/§5.4 rewrite)
+status: current
+---
+
 # A1 Diagnosis — rigid K2D 22% gap is sample bias, not discretization
 
 > **Date:** 2026-05-31. Closes A1 of plan `open-question-cluster-jiggly-hamster`.

@@ -1,3 +1,9 @@
+---
+purpose: Round 1 → Round 2 step-by-step user actions on cluster-A
+audience: user (cluster-A)
+status: current
+---
+
 # Round 1 → Round 2 — what you do next
 
 ## TL;DR

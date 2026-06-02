@@ -1,10 +1,18 @@
-# 03_result — K2D(l) per same-system pair + σ_K2D
+---
+type: derivation
+status: under-review (criteria 1+4 ✓; criterion 2 partial, 3 fails — see open questions)
+date: 2026-06-02
+summary: 03_result — K2D(l) per same-system pair + σ_K2D (03_k2d_l_kernel)
+derivation_folder: 03_k2d_l_kernel
+step: result
+inputs: derivation/02 z_lab arrays; 01_setup.md eqs. (1.4)–(1.11)
+outputs: tables (3.1)–(3.3); `results/derivation_b2/k2d_l_curves.npz`
+agent_read_when:
+  - working on 03_k2d_l_kernel or its successor
+  - need to know the result of this derivation step
+---
 
-> **Status**: under-review (criteria 1+4 ✓; criterion 2 partial, 3 fails — see open questions)
-> **Date**: 2026-06-02
-> **Author**: Claude (Opus 4.7)
-> **Inputs**: derivation/02 z_lab arrays; 01_setup.md eqs. (1.4)–(1.11)
-> **Outputs**: tables (3.1)–(3.3); `results/derivation_b2/k2d_l_curves.npz`
+# 03_result — K2D(l) per same-system pair + σ_K2D
 
 ## What this step delivers
 

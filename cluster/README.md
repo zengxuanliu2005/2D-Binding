@@ -1,3 +1,10 @@
+---
+purpose: 'Top-level cluster/ guide: how to use this tree as both senior-bundle and
+  cluster-A workspace'
+audience: senior (after tarball) + user (on cluster-A) + Claude
+status: current
+---
+
 # cluster/ — what to ship to senior + what to run on cluster-A
 
 This folder is **both** the validation harness we run on cluster-A

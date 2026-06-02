@@ -1,10 +1,18 @@
-# 00_intent — Why we need K2D(l; lp_R, lp_L)
+---
+type: derivation
+status: under-review (criteria 1 + 4 ✓; criterion 2 partial; criterion 3 fails — see 05)
+date: 2026-06-02
+summary: 00_intent — Why we need K2D(l; lp_R, lp_L) (03_k2d_l_kernel)
+derivation_folder: 03_k2d_l_kernel
+step: intent
+inputs: derivation/02 z_lab arrays; raw_tether_partition_k2d.py binding kernel; stage_essay §4.3
+outputs: motivation + acceptance criteria for K2D(l) per system pair
+agent_read_when:
+  - working on 03_k2d_l_kernel or its successor
+  - need to know the intent of this derivation step
+---
 
-> **Status**: under-review (criteria 1 + 4 ✓; criterion 2 partial; criterion 3 fails — see 05)
-> **Date**: 2026-06-02
-> **Author**: Claude (Opus 4.7)
-> **Inputs**: derivation/02 z_lab arrays; raw_tether_partition_k2d.py binding kernel; stage_essay §4.3
-> **Outputs**: motivation + acceptance criteria for K2D(l) per system pair
+# 00_intent — Why we need K2D(l; lp_R, lp_L)
 
 ## What this step delivers
 

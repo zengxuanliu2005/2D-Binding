@@ -1,3 +1,10 @@
+---
+purpose: 'Convention: Claude writes <date>_round<N>_diagnosis.md + _next_actions.md
+  per round'
+audience: user (reads next_actions) + Claude (writes)
+status: current
+---
+
 # cluster/trial/results/ — Claude writes diagnosis + script-patch plans here
 
 ## Purpose

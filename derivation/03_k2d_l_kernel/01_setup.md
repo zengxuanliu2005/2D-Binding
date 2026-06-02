@@ -1,10 +1,18 @@
-# 01_setup — Binding kernel and the convolution
+---
+type: derivation
+status: accepted
+date: 2026-06-02
+summary: 01_setup — Binding kernel and the convolution (03_k2d_l_kernel)
+derivation_folder: 03_k2d_l_kernel
+step: setup
+inputs: derivation/02 z_lab; raw_tether_partition_k2d.py constants
+outputs: equations (1.1)–(1.6); ready for code mapping in 04_numerics.md
+agent_read_when:
+  - working on 03_k2d_l_kernel or its successor
+  - need to know the setup of this derivation step
+---
 
-> **Status**: accepted
-> **Date**: 2026-06-02
-> **Author**: Claude (Opus 4.7)
-> **Inputs**: derivation/02 z_lab; raw_tether_partition_k2d.py constants
-> **Outputs**: equations (1.1)–(1.6); ready for code mapping in 04_numerics.md
+# 01_setup — Binding kernel and the convolution
 
 ## Geometry recap
 

@@ -1,146 +1,146 @@
-# CLAUDE.md — 2D-Binding (membrane receptor–ligand adhesion)
+---
+type: onboarding
+project: 2D-Binding
+status: accepted
+date: 2026-06-02
+summary: "Coarse-grained MD study of how adhesion-protein flexibility (rigid/semi/flex) sets the 2D binding constant K2D. Open question: explain ~35× K2D spread purely as an entropy difference. Active workstreams A/B/C/D; current focus is B2 (lp-parametrized theory) + cluster trial round 2."
+agent_read_when:
+  - new agent landing in the repo for the first time
+  - need to know unit conventions, git discipline, or environment
+  - looking for the right folder to write a new artifact
+agent_skip_when:
+  - already familiar with the project and continuing a specific workstream
+  - working purely in derivation/ or log/ (those have their own onboarding)
+navigation_map:
+  - { path: log/,         purpose: session memory + ADRs + calibration tables,                  read_for: "rationale, history, decisions" }
+  - { path: derivation/,  purpose: theory derivations (B2 WLC chain → K2D(l) → ξ_RL → F_conf),  read_for: "why a formula is what it is" }
+  - { path: scripts/,     purpose: local analysis modules (laptop, s001 single-replica),         read_for: "running local analyses" }
+  - { path: cluster/,     purpose: pipelines that ship to cluster-A or senior; trial validation, read_for: "cluster work, senior bundle, trial outputs/results" }
+  - { path: results/,     purpose: numerical outputs (md + npz + figures),                       read_for: "current measured / predicted numbers" }
+  - { path: writeup/,     purpose: stage essay (English), upcoming Chinese essay/slides/poster, read_for: "academic deliverables" }
+  - { path: ref/,         purpose: reference papers + ref/nvt-md.py force-field source of truth, read_for: "literature, MD force field" }
+  - { path: PLAN.md,      purpose: legacy phase tracker (now mostly in user-dir plan file),     read_for: "high-level phase summary" }
+  - { path: JOURNEY.md,   purpose: historical chronology of attempts (incl. 3 that didn't close),read_for: "what we tried and rejected" }
+---
 
-> Project onboarding for Claude Code. Keep this concise and operational. Live task tracker lives in **PLAN.md**.
+# CLAUDE.md — 2D-Binding project onboarding
 
-## What this project is
+> **First time here?** Read frontmatter above + the "Where to go next" section.
+> Everything detailed is one folder away.
 
-Coarse-grained molecular dynamics study of how adhesion-protein **flexibility** sets the 2D binding constant `K2D` for membrane-anchored receptor–ligand pairs (CD47–SIRPα-like). MD engine: **GALA / pygamd** (GPU). The open scientific question: explain the ~35× spread in `K2D,max` across rigid / semi-rigid / flexible proteins **purely as an entropy difference**.
+## Where to go next (decision tree)
 
-## Current focus
+| Your task | Read first |
+|---|---|
+| **I'm continuing a stalled session** | most recent `log/sessions/<file>.md` |
+| **I need to know why we chose X** | `log/decisions/<adr-id>_<slug>.md` |
+| **I need current prediction vs measurement** | `log/calibration/<topic>.md` |
+| **I'm developing B2 theory** | `derivation/0N_<topic>/00_intent.md` then 01_setup |
+| **I'm working on cluster pipelines** | `cluster/README.md` |
+| **I'm interpreting trial round outputs** | `cluster/trial/results/<date>_round<N>_diagnosis.md` |
+| **I'm writing essay v2 / slides / poster** | `writeup/drafts/stage_essay.md` (don't add frontmatter; academic deliverable) |
 
-The decomposition closure is **done** — the PhD's S1–S23 four-term framework, evaluated directly on simulation chain coordinates, reproduces the K2D,max log-ratio targets within 0.4 kBT with all signs correct:
+The plan file (in `~/.claude/plans/` user dir, referenced by the Plan tool) holds
+strategy + open questions. CLAUDE.md is the static onboarding.
 
-| pair         | predicted | target ΔF (kBT) | closed |
-| ------------ | --------- | --------------- | ------ |
-| flex – rigid | +3.96     | +3.56           | 111 %  |
-| semi – rigid | +2.69     | +2.68           | **100 %** |
-| semi – flex  | −1.27     | −0.90           | 141 %  |
+## Project at a glance
 
-The closure lives at tag `phase2-phd-closure-attempt` (commit `041cb0e` on `main`). Reproduce via `python scripts/phd_closure.py && python scripts/plot_phd_closure.py`. The four formulas are in `scripts/phd_formula.py`, driven by `scripts/phd_closure.py`. Per-system inputs come from `results/chain_coords/<sys>/chain_coords.npz` (written by `scripts/extract_chain_coords.py`).
+CG molecular dynamics study of CD47-SIRPα-like receptor-ligand pairs anchored
+on apposed lipid membranes. Three flexibility classes via ecto-domain angle
+stiffness:
 
-For the chronology of attempts (including three that didn't close: Schlitter conformational, Numata MI chain-rule, MI + chain potential) see `JOURNEY.md`. Those scripts are still on disk under `scripts/{conf_entropy,mi_decomposition,decomposition_full}.py` as historical record.
+| name | ecto stiffness K (ε) | persistence length lp (nm) | K2D,max (nm²) |
+|---|---:|---:|---:|
+| K100 ("rigid") | 100  | 84.6 | 12705 |
+| K10  ("semi")  |  10  |  8.18 |  875 |
+| K01  ("flex")  |   0.1|  1.14 |  362 |
 
-**Remaining work:**
-- Bootstrap error bars on each of the four ΔF terms (~5 min local, required for write-up).
-- Phase 4 deliverables (write-up, slide deck, poster) — headline figure is `results/figures/closure_phd.png`.
-- (Optional) Parametric F_rot replacement (Bingham on S² or normalising flow) to tighten the 0.4 kBT residual. See `JOURNEY.md` §9.
+Open scientific question: **can the 35× K2D ratio be explained purely as
+entropy?** Current consensus from 5 methods says yes, within 0.22 kBT
+inverse-variance-weighted (see `log/calibration/closure_methods_consensus.md`).
 
-**Do NOT tune terms to hit the target.** The closure passes by construction now; don't re-fit anything just to get tighter numbers.
+## Unit system — MUST NOT get wrong
 
-## Unit system — get this right; it propagates into every entropy number
+- **Length**: σ = 1 nm. (2500 proteins/µm² ⇔ 20σ spacing ⇒ 400 nm²/protein.)
+- **Energy**: kBT = 1.1 ε. Convert ε → kBT by dividing by 1.1.
+- **Bond r₀**: **1.0 σ for protein-protein bonds** (HARM K=100 in ref/nvt-md.py);
+  0.95 σ only for lipid FENE bonds. The closure framework uses b = 1.0 σ.
+- **Binding well**: depth −14.76 ε ≈ −13.4 kBT; angular gate θ₀ = 10°, K = 15/rad².
+- **Thermostat**: Langevin (Bussi-Parrinello), T = 1.1 ε/kB, dt = 0.01.
 
-- **Length:** σ = 1 nm.  (2500 proteins/µm² ⇔ 20σ spacing ⇒ 400 nm²/protein ⇒ σ = 1 nm.)
-- **Energy:** kBT = 1.1 ε.  Convert any ε-based energy to kBT by **dividing by 1.1**.
-- **Bead spacing** (bond `r0`): **1.0 σ for protein–protein bonds** (HARM K=100 in `ref/nvt-md.py`), 0.95 σ only for the lipid FENE bonds. Several sessions tripped on this distinction; the closure framework uses `b = 1.0 σ` throughout.
-- **Binding well depth:** −14.76 ε ≈ **−13.4 kBT**.  Angular gate: θ0 = 10°, K = 15 /rad².
-- Thermostat: Langevin (Bussi–Parrinello), T = 1.1 ε/kB, dt = 0.01.
+## Data conventions
 
-## Repo layout (LOCAL repo as downloaded — this is where Claude Code runs)
+- `outputs/` is git-ignored (read-only input). Don't write there.
+- Trajectories `traj.xyz` are 2-4 GB each — never load whole into memory; use
+  `scripts/io_xyz.py::iter_frames` for streaming.
+- Bead numbering: chain[3] = anchor head, chain[12] = binding bead. Ecto =
+  chain[3:13]. See `scripts/system_inputs.py`.
+- `*_distributed_*.tsv` files are raw per-sample lists, NOT histograms.
+- Distances in σ (= nm), angles in degrees.
 
-Only `s001` of each system is downloaded (Mac storage limit; cluster has more replicas under /mnt/nfs/ugstu/liuzx). Trajectories are 2-4 GB each.
+## Environment & network
 
-```
-outputs/   (GIT-IGNORED — read-only input; write nothing here)
-  15_120x120_K100_EPS05/s001/   RIGID    (ecto K=100)
-  15_120x120_K10_EPS05/s001/    SEMI     (K=10)
-  22_120x120_K01_EPS05/s001/    FLEXIBLE (K=0.1)
-    s001/  MD outputs per system:
-      traj.xyz (2-4 GB), mol.psf, state.cpt   <- raw MD (read-only; never load whole traj)
-      *_distributed_*.tsv                     <- extracted observables (per-sample lists)
-      binding_vector_final_*_vectors.tsv      <- 3D binding-vector orientation (K10/K100 only)
-      bindsites_rxryrz_distribution.tsv       <- 3D binding-site positions (K10/K100 only)
-      EC_angle_distributed_*.tsv              <- ecto-domain angle (K10/K100 only)
-      result_Re*, result_*_complex.dat, roughness*.tsv, num_bonds_*.dat
-analysis/   post-processing scripts — CURRENTLY ONLY the membrane-distance script
-            (vertical_distance_to_membrane_complex.py); the generators for
-            binding_vector / bindsites / EC_angle / angles / Re are NOT here yet.
-ref/        reference papers (PDF) + nvt-md.py (force-field source of truth)
-            + 其中一个体系的模拟参数.png (parameter sheet)
-2D-binding-MD.pptx / .pdf   working presentation
-scripts/    (CREATE) new analysis code for the entropy work
-results/    (CREATE) computed numbers, tables, figures
-```
+- **Local laptop**: conda env `phys` (Python 3.11 + numpy/scipy/pandas/matplotlib/scikit-learn).
+- **Cluster-A**: uses system base env at `/opt/miniconda3/bin/python` —
+  do NOT require `phys` (see ADR 002).
+- Network on laptop requires Clash Verge proxy:
+  ```bash
+  export http_proxy=http://127.0.0.1:7897
+  export https_proxy=http://127.0.0.1:7897
+  export all_proxy=socks5://127.0.0.1:7897
+  ```
 
-## Flexibility mapping (resolved)
+## Git discipline
 
-**K100 = rigid · K10 = semi-rigid · K01 (K=0.1) = flexible.** All three share the same membrane condition (EPS05, 120×120), so differences are protein flexibility only. Set by the ecto-domain angle stiffness in `nvt-md.py` (`*E-*E-*E` angles).
+- Commit after every meaningful step with a specific message
+  (`feat: ...`, `diag: ...`, `refactor: ...`, `B2.N: ...`, `log: ...`).
+- Never `--force` push, never rewrite shared history.
+- `outputs/` and `cluster/outputs/` gitignored (large MD outputs and raw cluster results).
+- Push at milestones. Remote `origin/main` exists.
+- See ADR 005 for the cluster/ IO loop convention (where to write what).
 
-## Data-consistency warning — HARMONIZE BEFORE COMPARING
+## Session-end report
 
-The simulation method is IDENTICAL across K01/K10/K100 (same nvt-md.py, only the ecto stiffness K differs), so the systems are physically comparable. The mismatch is only in analysis outputs: K01 was processed ~2 yrs ago with fewer extractors.
+After every session:
 
-- K100 & K10 (newer): `binding_vector_*`, `bindsites_rxryrz`, `bindsites_angle`, `EC_angle_*`, `result_Re.tsv` + `result_*_complex.dat`, `roughness_l`.
-- K01 (older): `phi_angle_*`, `result_Re_distributed_*`; MISSING the above. Harmonization plan (PhD-confirmed: EVERYTHING is derivable from `traj.xyz`): Claude Code should WRITE its own extractors from `traj.xyz` + `mol.psf` rather than wait for her scripts — but validate before trusting:
+1. Write a brief chat handoff (1-3 sentences: key decision / result).
+2. Pointer "see `log/sessions/<date>_<slug>.md` for full".
+3. Detailed Done/Changed/Findings/Decisions/Open/Next goes in the session log
+   file (with YAML frontmatter per `log/README.md` schema).
 
-1. Write an extractor for each needed observable (binding_vector, bindsites_rxryrz, bindsites_angle, EC_angle, Re, etc.), using bead-type conventions from `nvt-md.py` + `mol.psf`.
-2. **VALIDATE against existing files:** run the extractor on K10 and K100 and confirm it reproduces the PhD's existing `*.tsv` outputs for those systems. If it matches, the extractor is correct and conventions are right.
-3. Then run the SAME extractor on all three systems → identical provenance by construction. The PhD's K10/K100 files are the ground-truth check, not a dependency. (She can send a reference script if a convention is ambiguous.) The membrane-distance script (`vertical_distance_to_membrane_complex.py`, in `analysis/`) is confirmed current/unchanged — reuse it, don't rewrite. Watch: Re is stored differently — K10/K100 in `result_Re_complex.dat`, K01 in `result_Re_distributed_*.tsv`; reconcile the mapping before any Re-based entropy.
+This is the convention as of session 6a. Older sessions used inline chat
+handoffs which are now backfilled into log/sessions/.
 
-## Data file conventions
+## Cluster reference (compact)
 
-- `*_distributed_*.tsv` are **raw per-sample lists** (one value per line), NOT histograms. `_bind` = sampled while a bond/complex exists; `_unbind` = unbound. Build distributions and entropies from these directly.
-- Distances in σ (= nm); angles in degrees.
-- `roughness.tsv` columns: `#bonds  roughness  sum_l  count`.
-- Bound samples are far fewer than unbound — weight error bars accordingly.
+- **cluster-A**: `master`, repo path `/mnt/nfs/ugstu/liuzx/2D-Binding-main`.
+  conda at `/opt/miniconda3`, sbatch present, `gpu*` partition with 8 idle nodes.
+- **cluster-B**: senior's server, NOT accessible to us. Senior runs
+  bundle on it and emails back distilled tarball.
+- **Workstream C** (constrained-h slab MD): blocked on cu_gala install
+  on cluster-A. § 0 bundle path is the alternative.
 
-## Environment / how to run
+## Reference papers
 
-- Work happens on the cluster (`master`, repo under `/mnt/nfs/ugstu/liuzx`).
-- **Always use the conda env `phys`:** `conda activate phys` before running anything. Don't create a new venv. If a package is missing, install it into `phys` (`conda install ...` or `pip install ...` with `phys` active); `requirements.txt` lists the analysis packages needed.
-- Analysis is Python: numpy, scipy, pandas, matplotlib (+ scikit-learn for KDE).
-- The MD itself (GALA/pygamd) needs a GPU and is **NOT** rerun here. Treat `outputs/` as fixed input; do not launch `nvt-md.py` or the `*.slurm` jobs.
+`ref/`: Hu 2013 (PNAS), Xu 2015 (JCP), Weikl 2016 (Cell Adh & Migr),
+Hou 2025 (JCTC). The senior's PPT (`2D-binding-MD.pdf`) is in repo root.
 
-## Network (Clash Verge proxy) — REQUIRED for connectivity
+## Anti-patterns (do not repeat)
 
-The machine routes traffic through Clash Verge. Export these in the shell **before launching `claude`** (otherwise auth/API calls and `pip`/downloads fail):
+- Do NOT fit analytical polymer models per flexibility class (Gaussian works
+  only for flex, Marko-Siggia only for moderate stretch — past attempts).
+  The current B2 framework (discrete WLC MC) spans all 3 classes by construction.
+- Do NOT tune terms to hit a target. The S1-S23 closure passes by construction
+  on s001; the L_c sensitivity is exposed by B1 reimpl deliberately to test
+  the senior's framework.
+- Do NOT introduce `phd_*` filenames — renamed to purpose-based names in
+  session 3 (see ADR for the rename rationale embedded in
+  `log/sessions/session3_refactor.md`).
 
-```bash
-export http_proxy=http://127.0.0.1:7897
-export https_proxy=http://127.0.0.1:7897
-export all_proxy=socks5://127.0.0.1:7897
-```
+## Key file pointers
 
-If a network command fails, check the proxy is set (`echo $https_proxy`) and that Clash Verge is running on port 7897.
-
-## Conventions & gotchas
-
-- Report all free-energy/entropy numbers in **kBT** (divide ε by 1.1).
-- For cross-flexibility comparison, pull every distribution from the **same reference condition** — don't mix the 15×15 planar runs with the 120×120 fluctuating runs.
-- **Conformational entropy: do NOT fit analytical polymer models per flexibility** (Gaussian, Marko–Siggia, etc. each only work in one regime — this is why prior attempts failed). Instead estimate configurational entropy DIRECTLY from the simulated chain coordinates with a method that spans rigid→flexible: quasi-harmonic / covariance (Schlitter, Andricioaei–Karplus) cross-checked against a nonparametric kNN estimator (Kraskov et al.), combined via the mutual-information decomposition (Numata 2012, in `ref/`). Compute the TOTAL bound-vs-unbound configurational entropy, then let the MI chain rule partition it into translational/rotational/conformational/bonding so terms sum by construction. Needs per-frame internal coordinates (from `traj.xyz`, anchor- aligned, overall translation+rotation removed), not just R_e.
-- Watch double-counting between anchor angle (rotational), θ binding-vector (end-volume), and conformation — the MI terms above absorb this explicitly.
-- Never commit large binaries (`*.xyz *.dcd *.cpt *.psf`) — see `.gitignore`.
-- Use the K2D framework from `ref/` (Hu PNAS-2013, Xu JCP-2015) rather than reconstructing formulas from scratch.
-
-## Git discipline — MANDATORY, everything must be reversible
-
-Git is the safety net for this project. The human reviews progress through git history, so keep it clean and complete.
-
-- This is a git repo. **Commit after every meaningful step** (a working extractor, a validated result, a figure, a doc update) with a clear, specific message (e.g. `feat: binding-vector extractor, validated vs K10/K100`), not `update`.
-- **Use branches for anything exploratory or alternative.** Different entropy estimators, trial decompositions, risky refactors → each on its own branch (e.g. `entropy/quasi-harmonic`, `entropy/knn`). Merge only what's validated.
-- **Every choice must be redoable/reversible.** Never `git push --force`, never rewrite shared history, never hard-delete results — supersede them in a new commit so the old state stays recoverable. Prefer additive changes.
-- Tag milestones (`git tag phase1-done`) so the human can return to known-good points.
-- Commit code, docs, small `results/` tables, and figures. NEVER commit large binaries (`*.xyz *.dcd *.cpt *.psf *.dat` trajectories) — see `.gitignore`.
-- **`outputs/` is git-ignored (read-only input).** Write EVERYTHING you generate — harmonized observables, intermediate data, tables, figures — into `results/` (tracked) or `scripts/`. NEVER write generated files into `outputs/`; they would be untracked and lost to git history.
-- A remote `origin/main` exists. **Push at milestones** (`git push`) so work is backed up off-machine. Never force-push; never rewrite pushed history.
-- If unsure whether an action is reversible, commit first, then act.
-
-## End-of-task handoff report — ALWAYS produce this
-
-At the end of EVERY task/prompt, before stopping, output a structured report so the human can relay it and decide next steps. Use exactly these headings:
-
-- **Done:** what was accomplished this run (bullet list).
-- **Changed files:** files created/edited + git commits/branches made (with hashes).
-- **Key findings / numbers:** results, with units (kBT, nm), and any surprises.
-- **Decisions made:** choices taken and why (e.g. estimator picked, convention used).
-- **Open questions / blockers:** anything needing the human or the PhD.
-- **Next steps:** the concrete proposed next 1-3 actions.
-- **How to reproduce:** exact command(s) to re-run what was just done. Keep it concise and scannable. This report is the primary interface to the human.
-
-## Cluster / heavy compute (instructions pending)
-
-The human has SSH access to the group cluster; the PhD will send SLURM job- submission instructions later. Until then, do all analysis LOCALLY on the downloaded `s001` data. If a computation is too heavy for local (e.g. full-traj entropy over many frames), FLAG it in the handoff report rather than running it — it may be submitted to a calc node once instructions arrive. Do not invent cluster commands.
-
-## Key numbers to reproduce / verify
-
-- `K2D,max`: rigid ≈ 12705, semi ≈ 875, flexible ≈ 362 nm².
-- Master curve: `K2D = K2D,max · [1 + (ξ⊥/ξ_RL)²]^(−1/2)`.
+- B2 theory entry: `derivation/01_wlc_endpoint_distribution/00_intent.md`
+- B2 code: `scripts/k2d_l_wlc_theory.py`
+- 5-method consensus: `scripts/reconcile_methods.py`
+- Cluster trial entry: `cluster/trial/README.md`
+- Senior-facing bundle docs: `cluster/README_for_senior_zh.md`

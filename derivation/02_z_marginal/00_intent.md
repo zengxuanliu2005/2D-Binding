@@ -1,10 +1,18 @@
-# 00_intent — Why we need P_z(z; lp, Lc, k_a)
+---
+type: derivation
+status: accepted (all 3 criteria ✓ in 03_result.md; Q1-5 noted in 05)
+date: 2026-06-01
+summary: 00_intent — Why we need P_z(z; lp, Lc, k_a) (02_z_marginal)
+derivation_folder: 02_z_marginal
+step: intent
+inputs: derivation/01 P(R; lp, Lc); stage_essay.md §4.4 (k_a_eff = 255 ε/rad²)
+outputs: motivation + acceptance criterion for the membrane-anchored z-marginal
+agent_read_when:
+  - working on 02_z_marginal or its successor
+  - need to know the intent of this derivation step
+---
 
-> **Status**: accepted (all 3 criteria ✓ in 03_result.md; Q1-5 noted in 05)
-> **Date**: 2026-06-01
-> **Author**: Claude (Opus 4.7)
-> **Inputs**: derivation/01 P(R; lp, Lc); stage_essay.md §4.4 (k_a_eff = 255 ε/rad²)
-> **Outputs**: motivation + acceptance criterion for the membrane-anchored z-marginal
+# 00_intent — Why we need P_z(z; lp, Lc, k_a)
 
 ## The piece B2.2 must add to B2.1
 

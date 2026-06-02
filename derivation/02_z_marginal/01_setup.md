@@ -1,10 +1,18 @@
-# 01_setup — Geometry and the anchor-cone sampler
+---
+type: derivation
+status: accepted
+date: 2026-06-01
+summary: 01_setup — Geometry and the anchor-cone sampler (02_z_marginal)
+derivation_folder: 02_z_marginal
+step: setup
+inputs: derivation/01 endpoints + bond convention; CLAUDE.md kBT = 1.1 ε
+outputs: equations (1.1)–(1.7); ready for code mapping in 04_numerics.md
+agent_read_when:
+  - working on 02_z_marginal or its successor
+  - need to know the setup of this derivation step
+---
 
-> **Status**: accepted
-> **Date**: 2026-06-01
-> **Author**: Claude (Opus 4.7)
-> **Inputs**: derivation/01 endpoints + bond convention; CLAUDE.md kBT = 1.1 ε
-> **Outputs**: equations (1.1)–(1.7); ready for code mapping in 04_numerics.md
+# 01_setup — Geometry and the anchor-cone sampler
 
 ## Coordinate system
 

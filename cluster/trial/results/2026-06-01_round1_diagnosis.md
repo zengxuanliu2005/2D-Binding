@@ -1,3 +1,10 @@
+---
+purpose: 'Round 1 trial diagnosis: 4 issues found in cluster-A trial outputs, with
+  patches'
+audience: user (to apply patches) + Claude (future round)
+status: current
+---
+
 # Round 1 diagnosis — 2026-06-01
 
 ## Inputs read

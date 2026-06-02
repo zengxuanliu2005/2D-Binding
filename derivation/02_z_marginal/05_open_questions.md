@@ -1,10 +1,18 @@
-# 05_open_questions — caveats and next-round actions
+---
+type: derivation
+status: accepted
+date: 2026-06-02
+summary: 05_open_questions — caveats and next-round actions (02_z_marginal)
+derivation_folder: 02_z_marginal
+step: open_questions
+inputs: 03_result.md sanity tables; 04_numerics.md
+outputs: short punch list for derivation/03 and the senior-conversation queue
+agent_read_when:
+  - working on 02_z_marginal or its successor
+  - need to know the open_questions of this derivation step
+---
 
-> **Status**: accepted
-> **Date**: 2026-06-02
-> **Author**: Claude (Opus 4.7)
-> **Inputs**: 03_result.md sanity tables; 04_numerics.md
-> **Outputs**: short punch list for derivation/03 and the senior-conversation queue
+# 05_open_questions — caveats and next-round actions
 
 ## Q1 — z < 0 contributions (chain pointing into the membrane)
 

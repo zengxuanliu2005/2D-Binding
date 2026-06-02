@@ -1,10 +1,18 @@
-# 05_open_questions — caveats and the carry-forward to derivation/04
+---
+type: derivation
+status: accepted
+date: 2026-06-02
+summary: 05_open_questions — caveats and the carry-forward to derivation/04 (03_k2d_l_kernel)
+derivation_folder: 03_k2d_l_kernel
+step: open_questions
+inputs: 03_result.md tables; B2.2 σ_z values; senior's PPT slide 5
+outputs: punch list ordered by impact on derivation/04
+agent_read_when:
+  - working on 03_k2d_l_kernel or its successor
+  - need to know the open_questions of this derivation step
+---
 
-> **Status**: accepted
-> **Date**: 2026-06-02
-> **Author**: Claude (Opus 4.7)
-> **Inputs**: 03_result.md tables; B2.2 σ_z values; senior's PPT slide 5
-> **Outputs**: punch list ordered by impact on derivation/04
+# 05_open_questions — caveats and the carry-forward to derivation/04
 
 ## Q1 — Semi peak position offset (l\* vs 2⟨z⟩)
 

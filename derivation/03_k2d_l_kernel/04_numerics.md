@@ -1,10 +1,18 @@
-# 04_numerics — implementation choices for K2D(l) convolution
+---
+type: derivation
+status: accepted
+date: 2026-06-02
+summary: 04_numerics — implementation choices for K2D(l) convolution (03_k2d_l_kernel)
+derivation_folder: 03_k2d_l_kernel
+step: numerics
+inputs: scripts/k2d_l_wlc_theory.py; derivation/03 eqs. (1.4)–(1.11)
+outputs: code map + grid choices + tail-truncation policy
+agent_read_when:
+  - working on 03_k2d_l_kernel or its successor
+  - need to know the numerics of this derivation step
+---
 
-> **Status**: accepted
-> **Date**: 2026-06-02
-> **Author**: Claude (Opus 4.7)
-> **Inputs**: scripts/k2d_l_wlc_theory.py; derivation/03 eqs. (1.4)–(1.11)
-> **Outputs**: code map + grid choices + tail-truncation policy
+# 04_numerics — implementation choices for K2D(l) convolution
 
 ## Code anchor
 

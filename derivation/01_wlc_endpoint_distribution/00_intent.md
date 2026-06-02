@@ -1,10 +1,18 @@
-# 00_intent — Why we need P(R; lp, Lc)
+---
+type: derivation
+status: under-review (criteria 1+3 ✓ in 03_result.md; criterion 2 partial, see 05_open_questions Q1)
+date: 2026-06-01
+summary: 00_intent — Why we need P(R; lp, Lc) (01_wlc_endpoint_distribution)
+derivation_folder: 01_wlc_endpoint_distribution
+step: intent
+inputs: stage_essay.md §4.4, §5.3; reconcile_methods.py; LP_PHD in xi_rl_candidates.py
+outputs: motivation + acceptance criterion for the WLC end-to-end distribution
+agent_read_when:
+  - working on 01_wlc_endpoint_distribution or its successor
+  - need to know the intent of this derivation step
+---
 
-> **Status**: under-review (criteria 1+3 ✓ in 03_result.md; criterion 2 partial, see 05_open_questions Q1)
-> **Date**: 2026-06-01
-> **Author**: Claude (Opus 4.7)
-> **Inputs**: stage_essay.md §4.4, §5.3; reconcile_methods.py; LP_PHD in xi_rl_candidates.py
-> **Outputs**: motivation + acceptance criterion for the WLC end-to-end distribution
+# 00_intent — Why we need P(R; lp, Lc)
 
 ## The gap we are closing
 

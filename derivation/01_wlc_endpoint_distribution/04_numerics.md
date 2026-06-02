@@ -1,10 +1,18 @@
-# 04_numerics — Implementation choices and validation tables
+---
+type: derivation
+status: accepted
+date: 2026-06-01
+summary: 04_numerics — Implementation choices and validation tables (01_wlc_endpoint_distribution)
+derivation_folder: 01_wlc_endpoint_distribution
+step: numerics
+inputs: scripts/k2d_l_wlc_theory.py; pilot output at results/scratch/pilot_k2d_l_wlc/pilot_flex.npz
+outputs: tables (4.1)–(4.3) — implementation choices documented for reviewer
+agent_read_when:
+  - working on 01_wlc_endpoint_distribution or its successor
+  - need to know the numerics of this derivation step
+---
 
-> **Status**: accepted
-> **Date**: 2026-06-01
-> **Author**: Claude (Opus 4.7)
-> **Inputs**: scripts/k2d_l_wlc_theory.py; pilot output at results/scratch/pilot_k2d_l_wlc/pilot_flex.npz
-> **Outputs**: tables (4.1)–(4.3) — implementation choices documented for reviewer
+# 04_numerics — Implementation choices and validation tables
 
 ## Code anchor
 

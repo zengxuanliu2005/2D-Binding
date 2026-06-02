@@ -1,3 +1,16 @@
+---
+type: onboarding
+status: accepted
+date: 2026-06-02
+summary: "Index + conventions for derivation/: each theory step lives in its own NN_topic_slug/ subfolder with 5 standard md files (intent → setup → step → result → numerics → open_questions)."
+agent_read_when:
+  - starting a new derivation subfolder
+  - need to know the 5-file structure or status flow
+  - looking up which subfolder owns a particular formula
+agent_skip_when:
+  - working purely on a single existing derivation/<NN>/ — read that folder's 00_intent.md instead
+---
+
 # derivation/ — step-by-step theory work
 
 Per the project conventions (see plan `Derivation Documentation Conventions`),

@@ -1,3 +1,9 @@
+---
+purpose: Per-patch physical motivation for any diff vs upstream ref/nvt-md.py
+audience: Claude + future reviewer of MD scripts
+status: current
+---
+
 # corrections/ — patches to upstream MD setup
 
 Every file we ship here must be paired with a `.diff` showing the *minimum*

@@ -1,3 +1,9 @@
+---
+purpose: Schema senior should expect run_analysis.sh to write under cluster/outputs/distilled/
+audience: senior + user (after bundle return)
+status: current
+---
+
 # Expected output layout
 
 After `bash run_full_analysis.sh` finishes, this directory should contain

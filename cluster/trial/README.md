@@ -1,3 +1,10 @@
+---
+purpose: 'Trial harness: 4 scripts user runs on cluster-A to validate environment
+  + pilot extract'
+audience: user (cluster-A); Claude reads outputs/ for diagnosis
+status: current
+---
+
 # cluster/trial/ — user validation harness for cluster-A
 
 > Run on cluster-A. The output of each round goes into `outputs/`; Claude

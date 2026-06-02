@@ -1,10 +1,18 @@
-# 01_setup — Discrete WLC model and units
+---
+type: derivation
+status: accepted
+date: 2026-06-01
+summary: 01_setup — Discrete WLC model and units (01_wlc_endpoint_distribution)
+derivation_folder: 01_wlc_endpoint_distribution
+step: setup
+inputs: ref/nvt-md.py (force-field reference); CLAUDE.md unit conventions
+outputs: discrete bending Hamiltonian and parameter conversions (1.1)–(1.4)
+agent_read_when:
+  - working on 01_wlc_endpoint_distribution or its successor
+  - need to know the setup of this derivation step
+---
 
-> **Status**: accepted
-> **Date**: 2026-06-01
-> **Author**: Claude (Opus 4.7)
-> **Inputs**: ref/nvt-md.py (force-field reference); CLAUDE.md unit conventions
-> **Outputs**: discrete bending Hamiltonian and parameter conversions (1.1)–(1.4)
+# 01_setup — Discrete WLC model and units
 
 ## Coordinate system + units
 

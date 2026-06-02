@@ -1,10 +1,18 @@
-# 03_result — P_z(z; lp, Lc, k_a): MC + limit checks
+---
+type: derivation
+status: accepted
+date: 2026-06-02
+summary: "03_result — P_z(z; lp, Lc, k_a): MC + limit checks (02_z_marginal)"
+derivation_folder: 02_z_marginal
+step: result
+inputs: derivation/01 endpoints; 01_setup.md eqs. (1.1)–(1.7); k_a = 255 ε/rad²
+outputs: tables (3.1)–(3.3); `results/derivation_b2/wlc_z_marginal.npz`
+agent_read_when:
+  - working on 02_z_marginal or its successor
+  - need to know the result of this derivation step
+---
 
-> **Status**: accepted
-> **Date**: 2026-06-02
-> **Author**: Claude (Opus 4.7)
-> **Inputs**: derivation/01 endpoints; 01_setup.md eqs. (1.1)–(1.7); k_a = 255 ε/rad²
-> **Outputs**: tables (3.1)–(3.3); `results/derivation_b2/wlc_z_marginal.npz`
+# 03_result — P_z(z; lp, Lc, k_a): MC + limit checks
 
 ## What this step delivers
 
