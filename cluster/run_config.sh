@@ -1,15 +1,15 @@
 #!/bin/bash
 ###############################################################################
-#  cluster/SENIOR_CONFIG.sh — single-source config file for senior's full run
+#  cluster/run_config.sh — single-source config file for the full-data run
 #
-#  THIS IS THE ONLY FILE SENIOR EDITS. Both SBATCH wrapper
+#  THIS IS THE ONLY FILE YOU EDIT. Both SBATCH wrapper
 #  (cluster/slurm/full_analysis.slurm) and bash fallback (cluster/run_analysis.sh)
 #  source this file. Change values below, then sbatch or bash — nothing else
 #  needs editing.
 #
-#  USAGE BY SENIOR
-#  ---------------
-#    1. vim cluster/SENIOR_CONFIG.sh    (edit MD_PARENT + SYSTEMS_DIRS if naming differs)
+#  USAGE
+#  -----
+#    1. vim cluster/run_config.sh    (edit MD_PARENT + SYSTEMS_DIRS if naming differs)
 #    2. sbatch cluster/slurm/full_analysis.slurm    (PRIMARY — uses SLURM)
 #       OR
 #       bash cluster/run_analysis.sh                 (FALLBACK — if no SLURM)

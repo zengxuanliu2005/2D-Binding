@@ -1,8 +1,14 @@
+---
+purpose: "Chinese walkthrough for running the full-data analysis bundle on the off-site cluster"
+audience: off-site collaborator (after receiving cluster-bundle-<date>-<sha>.tgz)
+status: current
+---
+
 # 2D-Binding 全量数据复跑包
 
 > **From Claude (代 Zengxuan)**
 >
-> 学姐你好！这是一个自包含的分析包，把它解压到你 MD 数据所在的根目录就能跑。
+> 数据持有方您好！这是一个自包含的分析包，把它解压到你 MD 数据所在的根目录就能跑。
 > 它会扫描所有 `<体系>/s001`, `<体系>/s002`, ... 续跑文件夹，把每个 replica 的 chain
 > 坐标抽出来 → 全部 concat 起来 → 跑 4 个分析（closure_four_term 四项分解、closure_wlc_three_term
 > 三项 WLC、raw_tether_partition K2D、diagnose bound vs unbound 偏倚）→ 输出 distilled
@@ -20,13 +26,13 @@
 ```bash
 cd /path/to/your/MD/data/root
 tar xzf cluster-bundle-<date>-<sha>.tgz
-ls cluster/                    # 应该看到 SENIOR_CONFIG.sh / slurm/ / scripts/ 等
+ls cluster/                    # 应该看到 run_config.sh / slurm/ / scripts/ 等
 ```
 
-## 二、改 SENIOR_CONFIG.sh（**只需改这一个文件**）
+## 二、改 run_config.sh（**只需改这一个文件**）
 
 ```bash
-vim cluster/SENIOR_CONFIG.sh
+vim cluster/run_config.sh
 ```
 
 需要确认 / 改的字段（顶部那几行）：
@@ -83,7 +89,7 @@ cluster/outputs/distilled/
 每个文件都 < 1 MB，**整个 `distilled/` 大概 5 MB**。打包发回：
 
 ```bash
-tar czf distilled-from-senior.tgz cluster/outputs/distilled/
+tar czf distilled-from-offsite.tgz cluster/outputs/distilled/
 # 然后微信 / 邮件给 Zengxuan
 ```
 
@@ -104,7 +110,7 @@ bash cluster/run_analysis.sh --pilot
 
 最常见的 3 种：
 
-1. **找不到体系目录**：脚本默认 `${MD_PARENT}/15_120x120_K100_EPS05/s\d{3}/`。如果你的命名不同（比如 `K_100_eps05`），改 `cluster/SENIOR_CONFIG.sh` 顶部的 `SYSTEMS_DIRS` 数组。
+1. **找不到体系目录**：脚本默认 `${MD_PARENT}/15_120x120_K100_EPS05/s\d{3}/`。如果你的命名不同（比如 `K_100_eps05`），改 `cluster/run_config.sh` 顶部的 `SYSTEMS_DIRS` 数组。
 
 2. **traj.xyz 路径不对**：脚本期望每个 replica 下有 `traj.xyz` + `mol.psf` + `num_bonds_for_xyz_frames.dat`。如果你那边文件名稍微不一样，告诉 Zengxuan，他会更新脚本。
 
@@ -114,4 +120,4 @@ bash cluster/run_analysis.sh --pilot
 
 ---
 
-谢谢学姐！🎉
+谢谢外部协作者！🎉
