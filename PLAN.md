@@ -65,13 +65,28 @@ Status keys: `[x]` done · `[~]` in progress · `[ ]` todo
 - [ ] Poster (A0).
 - [ ] Re-do all figures with academic-publication style (D1 in plan).
 
-## Phase 5 — Multi-replica + theory [IN PROGRESS]
+## Phase 5 — Multi-replica + theory [B2 DONE, cluster IN PROGRESS]
 
-- [~] B2 lp-parametrized WLC theory (B2.1 + B2.2 + B2.3 done as of session 5;
-      B2.4 + B2.5 pending session 6b).
+- [x] **B2 lp-parametrized WLC theory** — all 5 steps done:
+      - B2.1 P(R; lp, Lc) discrete WLC MC (session 5, commit 6cb511f)
+      - B2.2 P_z(z; lp, Lc, k_a) membrane-anchored z marginal (session 5, commit 8b6b540)
+      - B2.3 K2D(l) hard-gate convolution (session 5, commit bf20668)
+      - B2.4 ξ_RL = σ_K2D + Xu 2015 ratio test (session 6b, commit 02ab226)
+            — B2 beats Xu by 8-14× on rigid:flex / rigid:semi ratios
+      - B2.5 F_conf via -ln P_z(D_bound) (session 6b, commit 5a06ed4)
+            — anchor-cone surcharge Δ = +3.79 / +1.21 / -0.04 kBT monotone in lp
 - [~] Cluster trial validation (round 1 done; round 2 pending user push).
 - [ ] Senior bundle round-trip on full data (cluster-B).
 - [ ] Constrained-h slab MD (Workstream C; blocked on cu_gala install).
+
+## Phase 6 — Documentation + delivery [STARTING]
+
+- [x] **Session 6a — meta plumbing** (commit 9ed3dc2): log/ bootstrap (sessions × 6,
+      decisions × 6, calibration × 4), CLAUDE.md restructure with navigation map,
+      Tier 1/2 YAML frontmatter on 45 md files, derivation/ schema doc.
+- [x] **Session 6b — B2.4 + B2.5** (commits 02ab226, 5a06ed4).
+- [ ] **Workstream D** (figures + essay v2 + slides + poster) — see plan
+      Phase 6 decision tree in user-dir plan.
 
 ---
 
@@ -92,7 +107,10 @@ Historical open Qs:
 ## Where to go for current state
 
 - **Active strategy**: user-dir plan file (Plan tool canonical).
-- **Recent session work**: `log/sessions/<date>_<slug>.md`.
-- **Current numbers**: `log/calibration/*.md`.
-- **Theory derivations**: `derivation/<NN>_<topic>/`.
+- **Recent session work**: `log/sessions/<date>_<slug>.md` (6 sessions through 6b).
+- **Current numbers**: `log/calibration/*.md` (4 running tables).
+- **Theory derivations**: `derivation/01..05/` (B2 chain complete).
+- **B2 outputs**: `results/derivation_b2/*.{npz,md}` (5 npz, 2 result-md).
 - **Cluster status**: `cluster/trial/results/<latest>.md`.
+- **Latest commits**: `git log -10 --oneline` — bf20668 (B2.3) → 02ab226 (B2.4)
+  → 5a06ed4 (B2.5).
