@@ -391,6 +391,13 @@ def write_report(
     bootstrap_max: dict[str, dict[str, np.ndarray]] | None = None,
 ) -> None:
     with open(out_md, "w") as fp:
+        fp.write("---\n")
+        fp.write('purpose: "Ab initio K2D from MD: soft + hard kernel area curves + K2D,max per system (auto-generated)"\n')
+        fp.write('audience: "essay v2 §4.5 + B2 calibration"\n')
+        fp.write("status: current\n")
+        fp.write("generated_by: scripts/raw_tether_partition_k2d.py\n")
+        fp.write('related: "log/calibration/b2_vs_measured_xi_rl.md"\n')
+        fp.write("---\n\n")
         fp.write("# Raw tether partition K2D prototype\n\n")
         fp.write("This prototype reads `outputs/<system>/s001/traj.xyz` directly, "
                  "streams bead 3/11/12 for every protein, excludes chains bound "

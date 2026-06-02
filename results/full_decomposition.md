@@ -1,3 +1,11 @@
+---
+purpose: "All-terms decomposition summary (translational/rotational/conformational/bond) (auto-generated)"
+audience: "essay v2 §4.6 + closure budget audit"
+status: current
+generated_by: scripts/decomposition_full.py
+related: "scripts/closure_four_term.py"
+---
+
 # ΔΔF closure: chain-potential ΔU + chain-rule −T·ΔS
 
 Combining (a) the per-chain force-field potential energy from

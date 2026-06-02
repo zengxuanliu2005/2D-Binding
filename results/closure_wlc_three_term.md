@@ -1,3 +1,11 @@
+---
+purpose: "B1 — three-term (trans+rot+WLC) closure reimpl of PPT s25 (auto-generated)"
+audience: "Claude (B2.5 reads D_bound + F_conf_MS) + essay v2 §4.6"
+status: current
+generated_by: scripts/closure_wlc_three_term.py
+related: "derivation/05_fconf_selfconsistency/"
+---
+
 # Closure 5 — PhD PPT s25 (trans + rot + WLC)
 
 Reimplements the PhD's PPT slide 25 three-term closure (trans + rot + Marko–Siggia WLC) on our own `chain_coords.npz` data so it can sit beside the four other methods in `reconcile_methods.py`. End-volume (S17) is dropped; conformational is upgraded from Gaussian S4 to the integrated Marko–Siggia force.

@@ -1,3 +1,11 @@
+---
+purpose: "Absolute K2D,max from ab initio raw partition (auto-generated)"
+audience: "essay v2 §4.5"
+status: current
+generated_by: scripts/absolute_k2d.py
+related: "scripts/raw_tether_partition_k2d.py"
+---
+
 # Absolute K2D from raw partition
 
 The raw-partition `K2D_eff(h_peak)` is a direct ab initio prediction of K2D,max in absolute nm². No free parameters — purely from the bond potential in `ref/nvt-md.py` + chain endpoint distributions from equilibrium MD.

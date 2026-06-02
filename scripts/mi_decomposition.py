@@ -301,6 +301,13 @@ def main():
     # write markdown summary
     out = root / "results" / "mi_decomposition.md"
     with open(out, "w") as fp:
+        fp.write("---\n")
+        fp.write('purpose: "Mutual-information based decomposition of inter-chain coupling (auto-generated)"\n')
+        fp.write('audience: "exploratory; not currently in 5-method consensus"\n')
+        fp.write("status: current\n")
+        fp.write("generated_by: scripts/mi_decomposition.py\n")
+        fp.write('related: "none"\n')
+        fp.write("---\n\n")
         fp.write("# MI chain-rule decomposition (hybrid estimator, with bootstrap σ)\n\n")
         fp.write("Five chain-rule blocks per protein:\n\n")
         fp.write("    axis_ecto (2) → ext_z (1) → bonds (12) → angles (11) → torsions (10)\n\n")

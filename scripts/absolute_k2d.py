@@ -140,6 +140,13 @@ def main():
     # --- Write markdown ---
     out_md = ROOT / "results" / "absolute_k2d.md"
     with open(out_md, "w") as fp:
+        fp.write("---\n")
+        fp.write('purpose: "Absolute K2D,max from ab initio raw partition (auto-generated)"\n')
+        fp.write('audience: "essay v2 §4.5"\n')
+        fp.write("status: current\n")
+        fp.write("generated_by: scripts/absolute_k2d.py\n")
+        fp.write('related: "scripts/raw_tether_partition_k2d.py"\n')
+        fp.write("---\n\n")
         fp.write("# Absolute K2D from raw partition\n\n")
         fp.write("The raw-partition `K2D_eff(h_peak)` is a direct ab initio "
                  "prediction of K2D,max in absolute nm². No free parameters — "

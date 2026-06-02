@@ -116,6 +116,13 @@ def main() -> int:
 
     out = root / "results" / "k2d_sanity.md"
     with open(out, "w") as fp:
+        fp.write("---\n")
+        fp.write('purpose: "K2D pipeline sanity checks (units, magnitudes, monotone trends) (auto-generated)"\n')
+        fp.write('audience: "Claude diagnostics + reviewer"\n')
+        fp.write("status: current\n")
+        fp.write("generated_by: scripts/k2d_sanity.py\n")
+        fp.write('related: "none"\n')
+        fp.write("---\n\n")
         fp.write("# K2D sanity check\n\n")
         fp.write(f"Membrane patch: {LX:.0f}×{LY:.0f} σ² = {AREA:.0f} nm².\n\n")
         fp.write("| system | frames | ⟨N_bound⟩ | ⟨R_free⟩ | ⟨L_free⟩ | "

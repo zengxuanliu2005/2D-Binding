@@ -1,3 +1,11 @@
+---
+purpose: "Manual inventory of measured observables (manual)"
+audience: "essay v2 + new agent onboarding"
+status: current
+generated_by: manual
+related: "none"
+---
+
 # Observables inventory — s001 of each flexibility class
 
 Generated: 2026-05-28 (Session 0, reconnaissance only).

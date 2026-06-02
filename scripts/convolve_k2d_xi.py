@@ -236,6 +236,13 @@ def main():
     np.savez(out_npz, **payload)
 
     with open(out_md, "w") as fp:
+        fp.write("---\n")
+        fp.write('purpose: "Weikl 2016 convolution K2D(ξ⊥) from K2D_eff(h) × Gaussian P(l) (auto-generated)"\n')
+        fp.write('audience: "essay v2 §4.3 + ξ_RL fit pipeline"\n')
+        fp.write("status: current\n")
+        fp.write("generated_by: scripts/convolve_k2d_xi.py\n")
+        fp.write('related: "none"\n')
+        fp.write("---\n\n")
         fp.write("# K2D(ξ⊥) prediction — Weikl 2016 Eq. (1) convolution\n\n")
         fp.write("Convolves measured `K2D_eff(h)` from `raw_tether_partition.npz` "
                  "with Gaussian `P(h; l̄, ξ⊥)` and maximizes over `l̄`.\n\n")

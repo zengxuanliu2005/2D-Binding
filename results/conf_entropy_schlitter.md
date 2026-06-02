@@ -1,3 +1,11 @@
+---
+purpose: "Schlitter quasi-harmonic configurational entropy estimate (auto-generated)"
+audience: "essay v2 §4.6 closure component"
+status: current
+generated_by: scripts/conf_entropy.py
+related: "none"
+---
+
 # Conformational entropy — Schlitter quasi-harmonic on BAT coords
 
 Each value is in units of k_B (== k_BT when multiplied by T,

@@ -289,6 +289,13 @@ def main():
     # --- Write narrative ---
     out_md = ROOT / "results" / "xi_rl_decomposition.md"
     with open(out_md, "w") as fp:
+        fp.write("---\n")
+        fp.write('purpose: "Q1 ξ_RL hypothesis test table (H1-H10 candidates) (auto-generated)"\n')
+        fp.write('audience: "essay v2 §5.3 + B2.4 cross-ref"\n')
+        fp.write("status: current\n")
+        fp.write("generated_by: scripts/plot_xi_rl_decomposition.py\n")
+        fp.write('related: "derivation/04_xi_rl_from_lp/"\n')
+        fp.write("---\n\n")
         fp.write("# ξ_RL microscopic decomposition\n\n")
         fp.write("**Question:** PhD's fitted ξ_RL (0.68 / 2.08 / 2.25 nm for "
                  "rigid / semi / flex) — what microscopic quantity does it correspond to?\n\n")

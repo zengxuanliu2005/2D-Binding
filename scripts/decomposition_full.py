@@ -162,6 +162,13 @@ def main():
     # write markdown
     out = root / "results" / "full_decomposition.md"
     with open(out, "w") as fp:
+        fp.write("---\n")
+        fp.write('purpose: "All-terms decomposition summary (trans/rot/conf/bond) (auto-generated)"\n')
+        fp.write('audience: "essay v2 §4.6 + closure budget audit"\n')
+        fp.write("status: current\n")
+        fp.write("generated_by: scripts/decomposition_full.py\n")
+        fp.write('related: "scripts/closure_four_term.py"\n')
+        fp.write("---\n\n")
         fp.write("# ΔΔF closure: chain-potential ΔU + chain-rule −T·ΔS\n\n")
         fp.write("Combining the per-chain force-field potential energy (`nvt-md.py` "
                  "bonds + cosine angles) with the configurational entropy chain rule.\n\n")

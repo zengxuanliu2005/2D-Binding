@@ -248,6 +248,13 @@ def main():
     # --- Write markdown ---
     out_md = ROOT / "results" / "method_reconciliation.md"
     with open(out_md, "w") as fp:
+        fp.write("---\n")
+        fp.write('purpose: "5-method ΔΔF consensus + bootstrap σ + pairwise gaps (auto-generated)"\n')
+        fp.write('audience: "essay v2 §4.6 author"\n')
+        fp.write("status: current\n")
+        fp.write("generated_by: scripts/reconcile_methods.py\n")
+        fp.write('related: "log/calibration/closure_methods_consensus.md"\n')
+        fp.write("---\n\n")
         fp.write("# Method reconciliation — ΔΔF consensus\n\n")
         fp.write("Four independent methods estimate the K2D,max free-energy "
                  "difference across flexibility tiers. This note quantifies "

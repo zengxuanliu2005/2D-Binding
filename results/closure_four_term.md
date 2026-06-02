@@ -1,3 +1,11 @@
+---
+purpose: "Curated narrative of four-term closure result (manual; not auto-generated)"
+audience: "essay v2 §4.6 + reviewer"
+status: current
+generated_by: manual (see closure_four_term_data.md for auto data)
+related: "scripts/closure_four_term.py"
+---
+
 # ΔΔF closure via the PhD's S1–S23 framework
 
 The K2D,max ratios `12705 / 875 / 362 nm²` for rigid / semi / flex give

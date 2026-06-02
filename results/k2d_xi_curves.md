@@ -1,3 +1,11 @@
+---
+purpose: "Weikl 2016 convolution K2D(ξ⊥) from K2D_eff(h) × Gaussian P(l) (auto-generated)"
+audience: "essay v2 §4.3 + ξ_RL fit pipeline"
+status: current
+generated_by: scripts/convolve_k2d_xi.py
+related: "none"
+---
+
 # K2D(ξ⊥) prediction — Weikl 2016 Eq. (1) convolution
 
 Convolves measured `K2D_eff(h)` from `raw_tether_partition.npz` with Gaussian `P(h; l̄, ξ⊥)` and maximizes over `l̄`.

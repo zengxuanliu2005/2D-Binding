@@ -1,3 +1,11 @@
+---
+purpose: "Q1 ξ_RL hypothesis test table (H1-H10 candidates) (auto-generated)"
+audience: "essay v2 §5.3 author + B2.4 cross-reference"
+status: current
+generated_by: scripts/plot_xi_rl_decomposition.py
+related: "derivation/04_xi_rl_from_lp/"
+---
+
 # ξ_RL microscopic decomposition
 
 **Question:** PhD's fitted ξ_RL (0.68 / 2.08 / 2.25 nm for rigid / semi / flex) — what microscopic quantity does it correspond to?

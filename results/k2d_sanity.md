@@ -1,3 +1,11 @@
+---
+purpose: "K2D pipeline sanity checks (units, magnitudes, monotone trends) (auto-generated)"
+audience: "Claude diagnostics + reviewer"
+status: current
+generated_by: scripts/k2d_sanity.py
+related: "none"
+---
+
 # K2D sanity check
 
 Membrane patch: 120×120 σ² = 14400 nm².

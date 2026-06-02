@@ -297,6 +297,13 @@ def main():
     # against the curated narrative.
     out_md = root / "results" / "closure_four_term_data.md"
     with open(out_md, "w") as fp:
+        fp.write("---\n")
+        fp.write('purpose: "Four-term S1-S23 ΔΔF closure on s001 (auto-generated)"\n')
+        fp.write('audience: "essay v2 §4.6 + closure consensus"\n')
+        fp.write("status: current\n")
+        fp.write("generated_by: scripts/closure_four_term.py\n")
+        fp.write('related: "scripts/free_energy_terms.py"\n')
+        fp.write("---\n\n")
         fp.write("# ΔΔF closure via the PhD's S1-S23 framework\n\n")
         fp.write("Each pair value is per R-L pair, in k_B T.\n\n")
         fp.write("## Per-system inputs\n\n")

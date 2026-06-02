@@ -1,3 +1,11 @@
+---
+purpose: "5-method ΔΔF consensus + bootstrap σ + pairwise gaps (auto-generated)"
+audience: "essay v2 §4.6 author"
+status: current
+generated_by: scripts/reconcile_methods.py
+related: "log/calibration/closure_methods_consensus.md"
+---
+
 # Method reconciliation — ΔΔF consensus
 
 Four independent methods estimate the K2D,max free-energy difference across flexibility tiers. This note quantifies the residual gaps and constructs a consensus estimator.
@@ -6,9 +14,9 @@ Four independent methods estimate the K2D,max free-energy difference across flex
 
 1. **Target (Hu fit):** 2-step protocol on (ξ⊥, K2D) slab data; K2D,max = 12705 / 875 / 362 nm² → ΔΔF = 3.56 / 2.68 / −0.90 kBT.
 2. **PhD PPT s25:** trans + rot + conf (WLC Marko-Siggia), as published on PPT slide 25 with her implicit L_c choice.
-3. **phd_closure (S1-S23):** trans + conformal + end-volume + rot; evaluated on chain_coords.npz. Bootstrap σ from `phd_closure.py --bootstrap`.
+3. **Four-term decomposition (S1-S23):** trans + conformal + end-volume + rot; evaluated on chain_coords.npz. Bootstrap σ from `closure_four_term.py --bootstrap`.
 4. **Raw partition:** polymer-tether partition function with soft binding kernel; bootstrap n=200 frames. Ab initio — no fitting to (ξ⊥, K2D) data.
-5. **s25 reimpl:** reimplementation of method 2 on our own chain_coords data with the standard Marko–Siggia integrated stretching free energy, L_c = 12 nm (model contour, 12 protein bonds × 1.0 σ), l_p from `xi_rl_candidates.LP_PHD`. Bootstrap σ from `phd_closure_s25.py --bootstrap`.
+5. **s25 reimpl:** reimplementation of method 2 on our own chain_coords data with the standard Marko–Siggia integrated stretching free energy, L_c = 12 nm (model contour, 12 protein bonds × 1.0 σ), l_p from `xi_rl_candidates.LP_PHD`. Bootstrap σ from `closure_wlc_three_term.py --bootstrap`.
 
 ## ΔΔF comparison (kBT)
 
@@ -16,7 +24,7 @@ Four independent methods estimate the K2D,max free-energy difference across flex
 |---|---:|---:|---:|
 | Target (Hu fit) | +3.560 | +2.680 | -0.900 |
 | PhD PPT s25 | +3.640 | +2.470 | -1.180 |
-| phd_closure (S1-S23) | +3.960 | +2.690 | -1.270 |
+| Four-term decomposition (S1-S23) | +3.960 | +2.690 | -1.270 |
 | Raw partition | +3.324 | +2.409 | -0.915 |
 | s25 reimpl | +5.231 | +2.053 | -3.178 |
 
@@ -25,7 +33,7 @@ Four independent methods estimate the K2D,max free-energy difference across flex
 | Method | flex−rigid | semi−rigid | semi−flex | max gap |
 |---|---:|---:|---:|---:|
 | PhD PPT s25 | 0.080 | 0.210 | 0.280 | 0.280 |
-| phd_closure (S1-S23) | 0.400 | 0.010 | 0.370 | 0.400 |
+| Four-term decomposition (S1-S23) | 0.400 | 0.010 | 0.370 | 0.400 |
 | Raw partition | 0.236 | 0.271 | 0.015 | 0.271 |
 | s25 reimpl | 1.671 | 0.627 | 2.278 | 2.278 |
 
@@ -43,7 +51,7 @@ Target σ from curve_fit covariance on K2D,max; raw partition σ from bootstrap.
 
 ## Consensus estimator (inverse-variance weighted)
 
-Combines target + PhD PPT s25 + raw partition (omits phd_closure due to known end-volume double-counting). Estimated σ: target 0.10, PhD PPT 0.15, raw partition bootstrap.
+Combines target + PhD PPT s25 + raw partition (omits Four-term decomposition due to known end-volume double-counting). Estimated σ: target 0.10, PhD PPT 0.15, raw partition bootstrap.
 
 | Pair | consensus (kBT) | target | gap |
 |---|---:|---:|---:|
@@ -57,7 +65,7 @@ Combines target + PhD PPT s25 + raw partition (omits phd_closure due to known en
 
 2. **Raw partition and PhD PPT s25 both undershoot flex−rigid by 0.2–0.3 kBT.** This is a systematic pattern — both methods are independently capturing the same physical limitation (chain-response for raw partition; WLC Gaussian approximation for PhD PPT). The target itself may be biased by the Hu master curve's Gaussian-K2D(l) assumption.
 
-3. **phd_closure (S1-S23) has the largest residuals** (up to 0.4 kBT), consistent with known double-counting between the conformal and end-volume terms.
+3. **Four-term decomposition (S1-S23) has the largest residuals** (up to 0.4 kBT), consistent with known double-counting between the conformal and end-volume terms.
 
 4. **The consensus estimator is within 0.02 kBT of the target for semi−rigid** — the cleanest comparison because both K100 and K10 are directly matched between our systems and PhD's data.
 

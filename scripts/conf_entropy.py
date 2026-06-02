@@ -126,6 +126,13 @@ def main():
     # write a results file
     out = root / "results" / "conf_entropy_schlitter.md"
     with open(out, "w") as fp:
+        fp.write("---\n")
+        fp.write('purpose: "Schlitter quasi-harmonic configurational entropy estimate (auto-generated)"\n')
+        fp.write('audience: "essay v2 §4.6 closure component"\n')
+        fp.write("status: current\n")
+        fp.write("generated_by: scripts/conf_entropy.py\n")
+        fp.write('related: "none"\n')
+        fp.write("---\n\n")
         fp.write("# Conformational entropy — Schlitter quasi-harmonic on BAT coords\n\n")
         fp.write("Each value is in units of k_B (== k_BT when multiplied by T,\n")
         fp.write("but in our reduced units T = 1.1 ε/k_B, so the k_B value IS the\n")

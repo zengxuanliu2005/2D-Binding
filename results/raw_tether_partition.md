@@ -1,3 +1,11 @@
+---
+purpose: "Ab initio K2D from MD: soft + hard kernel area curves + K2D,max per system (auto-generated)"
+audience: "essay v2 §4.5 + B2 calibration"
+status: current
+generated_by: scripts/raw_tether_partition_k2d.py
+related: "log/calibration/b2_vs_measured_xi_rl.md"
+---
+
 # Raw tether partition K2D prototype
 
 This prototype reads `outputs/<system>/s001/traj.xyz` directly, streams bead 3/11/12 for every protein, excludes chains bound in the same raw frame using `num_bonds_for_xyz_frames.dat`, and estimates the lateral phase-space area for RB-LB capture plus binding-angle compatibility at trial membrane separations `h`.

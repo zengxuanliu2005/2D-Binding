@@ -1,3 +1,11 @@
+---
+purpose: "Senior K2D(ξ⊥) Gaussian fit → fitted ξ_RL per system (auto-generated)"
+audience: "essay v2 §4.4 + B2.4 measured reference"
+status: current
+generated_by: scripts/xi_rl_decomposition.py
+related: "log/calibration/b2_vs_measured_xi_rl.md"
+---
+
 # ξ_RL fit replication — PhD's 2-step protocol
 
 ## Step 1: Unconstrained Hu fit

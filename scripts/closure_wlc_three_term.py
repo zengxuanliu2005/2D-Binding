@@ -292,6 +292,13 @@ def main():
 
     out_md = root / "results" / "closure_wlc_three_term.md"
     with open(out_md, "w") as fp:
+        fp.write("---\n")
+        fp.write('purpose: "B1 — three-term (trans+rot+WLC) closure reimpl of PPT s25 (auto-generated)"\n')
+        fp.write('audience: "Claude (B2.5) + essay v2 §4.6"\n')
+        fp.write("status: current\n")
+        fp.write("generated_by: scripts/closure_wlc_three_term.py\n")
+        fp.write('related: "derivation/05_fconf_selfconsistency/"\n')
+        fp.write("---\n\n")
         fp.write("# Closure 5 — PhD PPT s25 (trans + rot + WLC)\n\n")
         fp.write("Reimplements the PhD's PPT slide 25 three-term closure "
                  "(trans + rot + Marko–Siggia WLC) on our own "

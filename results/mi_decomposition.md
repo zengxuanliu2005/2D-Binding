@@ -1,3 +1,11 @@
+---
+purpose: "Mutual-information based decomposition of inter-chain coupling (auto-generated)"
+audience: "exploratory; not currently in 5-method consensus"
+status: current
+generated_by: scripts/mi_decomposition.py
+related: "none"
+---
+
 # MI chain-rule decomposition (hybrid estimator, with bootstrap σ)
 
 Five chain-rule blocks per protein:

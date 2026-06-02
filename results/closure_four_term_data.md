@@ -1,3 +1,11 @@
+---
+purpose: "Four-term S1-S23 ΔΔF closure on s001 (auto-generated)"
+audience: "essay v2 §4.6 author + Claude (closure consensus)"
+status: current
+generated_by: scripts/closure_four_term.py
+related: "scripts/free_energy_terms.py (formula source)"
+---
+
 # ΔΔF closure via the PhD's S1-S23 framework
 
 Each pair value is per R-L pair, in k_B T.

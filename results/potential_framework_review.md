@@ -1,3 +1,11 @@
+---
+purpose: "Curated review of binding kernel framework (manual)"
+audience: "essay v2 §4.3 + reviewer"
+status: current
+generated_by: manual
+related: "scripts/raw_tether_partition_k2d.py (kernel source)"
+---
+
 # Potential framework review: polymer-tether binding route
 
 Purpose: evaluate the new references in `ref/potential/` as possible
