@@ -12,7 +12,7 @@ agent_read_when:
   - planning Session 9 (D1 figures) and need a clean repo to work from
 related_decisions: [005, 007]
 key_outputs:
-  commits: []  # filled in after commits below
+  commits: [e85015a, eb4e1ae, d2bb7c6]  # filled in after Session 8 push
   artifacts:
     - cluster/run_config.sh                       # renamed from SENIOR_CONFIG.sh
     - cluster/HOWTO_run_full_data_zh.md           # renamed from README_for_senior_zh.md
