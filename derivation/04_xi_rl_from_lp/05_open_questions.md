@@ -12,6 +12,8 @@ agent_read_when:
   - planning derivation/05 (F_conf) or essay §5.3 update
 ---
 
+> **Loop 2 revision protocol**: see `log/decisions/007_loop2_b_revision_playbook.md` for the explicit decision tree mapping senior-data observations → which Q here gets closed / refined and which calibration row to flip.
+
 # 05_open_questions — what B2.4 leaves on the table
 
 ## Q1 — semi:flex ratio inversion (B2 says 1.38, measured 0.92)

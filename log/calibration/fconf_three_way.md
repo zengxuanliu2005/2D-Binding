@@ -91,10 +91,24 @@ narrative for essay v2 §5.3.
 - **Soft-Boltzmann kernel**: orthogonal effect; doesn't change F_conf
   but changes σ_K2D in derivation/03.
 
-## Action triggers
+## Action triggers (per playbook log/decisions/007)
 
-- when cluster slab returns: add row "cluster slab" with D_bound and
-  F_conf via slab constrained-h Boltzmann inversion
-- when senior bundle returns: add row "senior bundle full-data" with
-  PPT-style F_conf extracted from full chain_coords
-- if reflection BC replaces truncation: add row "B2.5 + reflection"
+When senior data arrives:
+
+- **On σ(R_z) rigid > 0.55 nm** → playbook S3: B2.2 σ_z calibration
+  resolves; this means re-running `scripts/fconf_b2_selfconsistency.py`
+  with senior's σ_z gives potentially shifted F_conf values; append row
+  "B2.5 + senior_σ_z" with new numbers; note that Δ_anchor magnitude is
+  what matters for the narrative — the absolute B2 F_conf may shift but
+  the rigid/flex monotone trend should persist.
+- **On per-system k_a > 10% spread** → playbook S4: re-derive B2.2 with
+  per-system k_a, rerun B2.5; append row "B2.5 + per-system k_a"; flip
+  Δ_anchor numbers accordingly.
+- **On slab D_bound (bias-corrected)** → if slab data lands and gives
+  rigid D_bound ≠ 9.154 nm (e.g., shifted by ~0.5 nm per A1 diagnosis):
+  append row "B2.5 + slab D_bound" with shifted numbers; mark
+  `derivation/05/05_open_questions.md` Q2 as resolved (or refined).
+- **On reflection BC replacing z<0 truncation in derivation/06**:
+  append row "B2.5 + reflection BC"; expect flex Δ_anchor stays ≈ 0
+  (the truncation is what currently makes it perfectly cancel; reflection
+  may shift it by ~0.5 kBT).

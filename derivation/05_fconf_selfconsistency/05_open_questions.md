@@ -12,6 +12,8 @@ agent_read_when:
   - planning to integrate cluster slab data or revised D_bound
 ---
 
+> **Loop 2 revision protocol**: see `log/decisions/007_loop2_b_revision_playbook.md` for the explicit decision tree mapping senior-data observations → which Q here gets closed / refined and which calibration row to flip.
+
 # 05_open_questions — caveats and the carry-forward
 
 ## Q1 — WLC σ_z (B2.2) vs measured σ(R_z) (PPT slide 5)

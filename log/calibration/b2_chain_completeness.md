@@ -123,12 +123,24 @@ Both resolutions are deferred to:
 - (b) The (optional) B2-refinement workstream if the user/team decides
   to invest beyond the current "accepted with caveat" status.
 
-## Action triggers
+## Action triggers (per playbook log/decisions/007)
 
-- when cluster slab K2D(l) data arrives: re-evaluate B2.3 criterion 3
-  by feeding measured (not WLC) σ_z into k2d_l_curve and checking if
-  monotone restores
-- when senior bundle σ(R_z) returns: update 02/05 Q2 with measurement,
-  potentially flip B2.2 #3 from ✗ to ✓
-- if reflection BC implemented in derivation/06: rerun B2.3 + B2.4,
-  update this snapshot
+When senior bundle distilled returns to `cluster/outputs/<date>_round<N>/`:
+
+- **On σ(R_z) rigid > 0.55 nm** → playbook S3: this calibration's row for
+  B2.2 criterion 3 flips ✗ → ✓; chain-level `summary` updates from 18/20 to
+  19/20 → flip frontmatter `agreement_summary` accordingly. Update
+  `last_updated`. Cross-reference the round N analysis.
+- **On per-system k_a spread > 10%** → playbook S4: B2.2 criterion 1 may
+  drift; append "S4 fired in Round N" note. New ADR 008 if confirmed.
+- **On slab K2D(l) shape RMSE > 20%** → playbook S6: B2.3 criterion 1/2
+  may flip ✗; recompute chain-level summary.
+- **On slab K2D(l) shape RMSE < 10%** → playbook S5: B2.3 criterion 1/2
+  externally validated; annotate row.
+- **On reflection BC implementation in derivation/06**: rerun B2.3 + B2.4,
+  expect B2.3 criterion 3 flips ✓; rewrite chain-level summary to 19/20 or
+  20/20 depending on outcome.
+
+Each action MUST also produce a session log (`log/sessions/<date>_6d_*.md`)
+and a `cluster/results/<date>_round<N>_analysis.md` row in the B-revision
+impact table.

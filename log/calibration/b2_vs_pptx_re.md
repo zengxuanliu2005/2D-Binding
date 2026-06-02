@@ -54,8 +54,16 @@ mapping itself shifts by ~10 %).
 | senior says system-specific Lc | new ADR + per-system Lc parameter |
 | we measure ⟨b⟩ from chain_coords | sub-correction of ~5 % to all three √⟨R²⟩ values |
 
-## Action triggers
+## Action triggers (per playbook log/decisions/007)
 
-- senior reply on Lc: add row with new prediction
-- chain_coords ⟨b⟩ measurement: add row with bond-stretching-corrected prediction
-- calibration accepted: change status to `resolved`
+When senior data arrives:
+
+- **On Lc clarification (senior tells us 12 / 25 / per-system)** →
+  playbook S2: rerun `scripts/k2d_l_wlc_theory.py` with new
+  `DEFAULT_LC_NM`; append row with new √⟨R²⟩ values; if per-system Lc,
+  also append a new column.
+- **On full-data chain_coords with measured ⟨b⟩ bond length** → append
+  row "senior + measured b" with bond-stretching-corrected √⟨R²⟩.
+- **On both above resolved (Lc + ⟨b⟩)** → if measured √⟨R²⟩ within 5% of
+  senior PPT Re for all 3 systems: flip frontmatter `status: open →
+  resolved`; cross-reference round N analysis.

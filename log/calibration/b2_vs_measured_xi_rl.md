@@ -61,8 +61,21 @@ derivation/03 05 Q2).
   → (a) resolves; B2.3 over-prediction shrinks.
 - Soft kernel swap → (b) shrinks by ~0.3 nm.
 
-## Action triggers
+## Action triggers (per playbook log/decisions/007)
 
-- when cluster slab returns: add new row with `slab_K2D_data | <numbers>`
-- when senior bundle full-data σ(R_z) returns: same
-- when B2.4 implements ratio test: add row with `ratio test | 0.36 vs 0.30`
+When senior data arrives:
+
+- **On σ(R_z) rigid > 0.55 nm** → playbook S3: append new running table row
+  `senior_full_data | <σ_z value> | factor (a) shrinks from 1.6×`; flip
+  factor (a) status in "Three sources of disagreement" table.
+- **On slab K2D(l) shape RMSE < 10%** (playbook S5): flip frontmatter
+  `status: partially-resolved` → `resolved-by-slab-validation`; append
+  row `slab_validation | shape RMSE <%>`.
+- **On slab K2D,max measurement** (playbook S7): if ratios differ from
+  PPT 12705:875:362, append row `slab_K2D_max | <numbers>`; new ADR 009
+  if confirmed.
+- **On metadata: senior ξ_RL fit was fixed-h slab** (playbook S8): drop
+  factor (c) from "Three sources of disagreement" table; simplify essay
+  v2 §4.4 narrative pointer.
+- **On reflection BC implementation in derivation/06**: append row with
+  reflection-BC σ_K2D values; expect semi:flex ratio inversion fixed.

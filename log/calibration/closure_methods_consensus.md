@@ -55,8 +55,21 @@ agent_read_when:
 - **B2.5** (next session) adds a 6th method (F_conf via -ln P_z), providing
   another independent triangulation point.
 
-## Action triggers
+## Action triggers (per playbook log/decisions/007)
 
-- when bundle returns: add row "Round bundle_round1 | <numbers>"
-- when B2.5 implemented: add column "WLC three-term (B2.5 P_z)" | <numbers>
-- when senior clarifies Lc: rerun WLC reimpl with new Lc, update row
+When senior data arrives:
+
+- **On ΔΔF flex-rigid ≈ 3.64 kBT within bootstrap σ** → playbook S1:
+  append row "senior_full_data_round1 | 3.64 | 2.47 | -1.18 |"; mark PPT s25
+  mystery RESOLVED; flip frontmatter `status: open → resolved` and update
+  `agreement_summary` to "full-data convergence confirmed".
+- **On ΔΔF ≠ PPT AND ≠ our s001** → playbook S2: append row with
+  observed values; add follow-up question about Lc to
+  `cluster/results/<date>_round<N>_next_actions.md`; do NOT change
+  frontmatter status until Lc clarified.
+- **On slab K2D,max measurement changing the targets** → playbook S7:
+  this entire calibration table targets `+3.56 / +2.68 / -0.90` from
+  PPT K2D,max; if slab gives different ratios, recompute and append row
+  `slab_target | <new values>`; new ADR 009 confirms target change.
+- **B2.5 was implemented in Session 6b** (done, see commit 5a06ed4): the
+  3-term WLC vs PPT s25 question stays open until S1 fires.

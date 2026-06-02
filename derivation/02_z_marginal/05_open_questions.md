@@ -12,6 +12,8 @@ agent_read_when:
   - need to know the open_questions of this derivation step
 ---
 
+> **Loop 2 revision protocol**: see `log/decisions/007_loop2_b_revision_playbook.md` for the explicit decision tree mapping senior-data observations → which Q here gets closed / refined and which calibration row to flip.
+
 # 05_open_questions — caveats and next-round actions
 
 ## Q1 — z < 0 contributions (chain pointing into the membrane)
