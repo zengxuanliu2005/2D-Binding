@@ -70,16 +70,32 @@ validation harness ready.
 
 Send `cluster/` (minus `trial/`) to senior:
 
+## Loop 1 closure — when trial verdict ✓ ships, run release_bundle.sh
+
+When the round-N diagnosis converges to a `<date>_round<N>_verdict.md`
+saying "all green", run **on laptop (NOT on cluster-A)**:
+
 ```bash
-cd /mnt/nfs/ugstu/liuzx/2D-Binding
-tar czf cluster-for-senior.tgz --exclude=cluster/trial cluster/
-# transfer to laptop, then to senior via WeChat / email
+bash cluster/release_bundle.sh
 ```
 
-She runs `bash cluster/run_analysis.sh` on her server (see
-`cluster/README_for_senior_zh.md`). The double-loop continues via
-`cluster/outputs/` ← senior's distilled outputs, and `cluster/results/`
-← Claude's analysis.
+This packs `cluster/` (excluding `trial/`, `outputs/`, `results/`,
+`bundle_for_senior/`, `release_bundle.sh` itself) into
+`cluster-bundle-<date>-<sha>.tgz`, logs the release in
+`cluster/RELEASES.md`, and prints the next steps for sending to senior.
+This is the **only protocol-defined Loop 1 → Loop 2 transition** —
+don't manually tar things; release_bundle.sh enforces the verdict
+check + provenance logging.
+
+Senior unpacks the tarball, edits `cluster/SENIOR_CONFIG.sh` (one file,
+~6 lines), runs `sbatch cluster/slurm/full_analysis.slurm` (her cluster
+has SLURM — primary path) or `bash cluster/run_analysis.sh` (fallback).
+See `cluster/README_for_senior_zh.md` for senior's full workflow.
+
+The double-loop continues via `cluster/outputs/` ← senior's distilled
+outputs, and `cluster/results/` ← Claude's analysis (which MUST include
+a "B-revision impact" section per
+`log/decisions/007_loop2_b_revision_playbook.md`).
 
 ## File overview
 
