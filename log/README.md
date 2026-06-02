@@ -142,6 +142,7 @@ related_decisions: [adr_id, ...]
 | 2026-06-01 | session4_trial_round1_round2_prep | debugging | trial 1-4 outputs + diagnosis + compute-node SBATCH |
 | 2026-06-02 | session5_b2_1_2_3                 | theory   | WLC MC + P_z(z) + K2D(l) all three steps green |
 | 2026-06-02 | session6_b2_4_5                   | theory   | B2.4 ratio test beats Xu 8-14×; B2.5 anchor-cone surcharge +3.8 kBT for rigid |
+| 2026-06-02 | session6c_cluster_prep_audit      | infra    | analyze_slab_traj.py implemented (K100 pilot 19% off target); 18 results md now Tier 2 FM; B2 chain completeness snapshot |
 
 ### Decisions
 | adr_id | slug | status | summary |
@@ -160,3 +161,4 @@ related_decisions: [adr_id, ...]
 | b2_vs_pptx_re              | open | WLC √⟨R²⟩ under-predicts senior PPT Re by 9-21% |
 | closure_methods_consensus  | open | 5 methods within 0.22 kBT consensus on flex-rigid; semi/flex disputed by L_c |
 | fconf_three_way            | open | B2.5 reveals anchor-cone surcharge +3.8/+1.2/-0.04 kBT (rigid/semi/flex) that MS misses |
+| b2_chain_completeness      | resolved | B2 chain 18/20 acceptance checks pass; 2 documented physical caveats (σ_z 1.8× wider, semi:flex inversion from truncation) |
