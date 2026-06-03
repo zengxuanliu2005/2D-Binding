@@ -39,7 +39,7 @@ Status keys: `[x]` done · `[~]` in progress · `[ ]` todo
 
 ## Phase 2 — Four-term S1-S23 closure [DONE pre-session 1]
 
-- [x] Four-term closure: F_t + F_c + F_bond + F_rot per the the source PPT
+- [x] Four-term closure: F_t + F_c + F_bond + F_rot per the source PPT
       slides S1-S23. Reproduces target ΔΔF within 0.4 kBT.
 - [x] Code: `scripts/closure_four_term.py` (renamed from `phd_closure.py` in
       session 3) driven by `scripts/free_energy_terms.py` (renamed) and
@@ -76,7 +76,8 @@ Status keys: `[x]` done · `[~]` in progress · `[ ]` todo
       - B2.5 F_conf via -ln P_z(D_bound) (session 6b, commit 5a06ed4)
             — anchor-cone surcharge Δ = +3.79 / +1.21 / -0.04 kBT monotone in lp
 - [x] Cluster trial validation — login + compute both ✓ on 2026-06-02 (verdict file: `cluster/trial/results/2026-06-02_round2_verdict.md`); release authorised
-- [ ] Full-data analysis bundle round-trip — pending `bash cluster/release_bundle.sh` + send to off-site collaborator + wait for distilled return
+- [~] Full-data pilot on cluster-A — round 1+2 exposed 3 path bugs (Session 9 patched); round 3 pending after cyberduck-upload
+- [ ] Full-data analysis bundle round-trip — pending pilot green + `bash cluster/release_bundle.sh` + off-site rsync + distilled cp back
 - [ ] Constrained-h slab MD (Workstream C; blocked on cu_gala install)
 
 ## Phase 6 — Documentation + delivery [IN PROGRESS]
@@ -85,8 +86,9 @@ Status keys: `[x]` done · `[~]` in progress · `[ ]` todo
 - [x] **Session 6b — B2.4 + B2.5** (commits 02ab226, 5a06ed4).
 - [x] **Session 6c — cluster-prep + audit** (commits e860152, 196ecf4, d72b35e): `analyze_slab_traj.py` real K2D math; legacy results md → Tier 2 FM; b2_chain_completeness snapshot.
 - [x] **Session 7 — double-loop protocol** (commits 72b01dc, c52e107, 6621b56): SBATCH wrapper + `release_bundle.sh` + ADR 007 Loop 2 playbook.
-- [x] **Session 8 — repo-wide cleanup** (commits TBD): person references removed from all active files; compute_node_check promoted to Step 5; round 1+2 diagnosis + verdict; 4 new index READMEs; comprehensive README audit.
-- [ ] **Workstream D** (figures + essay v2 + slides + poster) — see user-dir plan Session 9+.
+- [x] **Session 8 — repo-wide cleanup** (commits e85015a, eb4e1ae, d2bb7c6, ff90300): person references removed from all active files; compute_node_check promoted to Step 5; round 1+2 diagnosis + verdict; 4 new index READMEs; comprehensive README audit.
+- [~] **Session 9 — pilot full-data + cp-based workflow** (commits TBD): MD_PARENT auto-detect; 3 path bugs patched; release_bundle.sh refactored from tar to cp+cyberduck; HOWTO + READMEs rewritten.
+- [ ] **Workstream D** (figures + essay v2 + slides + poster) — see user-dir plan Session 10+.
 
 ---
 

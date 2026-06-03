@@ -145,6 +145,7 @@ related_decisions: [adr_id, ...]
 | 2026-06-02 | session6c_cluster_prep_audit      | infra    | analyze_slab_traj.py implemented (K100 pilot 19% off target); 18 results md now Tier 2 FM; B2 chain completeness snapshot |
 | 2026-06-02 | session7_double_loop_protocol     | infra    | run_config.sh + SBATCH wrapper + release_bundle.sh + ADR 007 Loop 2 playbook |
 | 2026-06-02 | session8_repo_cleanup             | infra    | Removed person references repo-wide; promoted Step 5 SBATCH; round 1+2 diagnosis+verdict; 4 new index READMEs; comprehensive README audit |
+| 2026-06-03 | session9_pilot_fullrun_cp_workflow | infra    | Pilot full-data exposed 3 path bugs (system_inputs path, raw_tether mol.psf symlink, banner damage); patched + added MD_PARENT auto-detect (cyberduck workflow → zero-edit defaults); rewrote release_bundle.sh + HOWTO + READMEs to cp-based handoff |
 
 ### Decisions
 | adr_id | slug | status | summary |
