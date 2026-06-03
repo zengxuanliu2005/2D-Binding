@@ -34,7 +34,7 @@ status: draft   # or accepted when verdict locked
 date: <YYYY-MM-DD>
 round: N
 summary: "<one-line: did §0 hypothesis confirm and what B revisions fire>"
-related_release: cluster/RELEASES.md row <date>   # which tarball off-site collaborator ran
+related_release: cluster/RELEASES.md row <date>   # which git SHA the off-site collaborator ran
 related_decisions: [005, 007]
 related_calibration: [b2_vs_measured_xi_rl, closure_methods_consensus, fconf_three_way, b2_chain_completeness]
 ---

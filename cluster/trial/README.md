@@ -108,36 +108,50 @@ If any step fails, Claude writes
 `cluster/trial/results/<date>_round<N>_diagnosis.md` with the specific
 divergence + a script patch.
 
-## After validation is green (all 5 steps pass)
+## After validation is green (all 5 steps pass + pilot full-data ✓)
 
-Run `bash cluster/release_bundle.sh` on the laptop to pack the bundle —
-see "Loop 1 closure" section below.
+Run `bash cluster/release_bundle.sh` on the laptop to authorise the
+release — see "Loop 1 closure" section below.
 
 ## Loop 1 closure — when trial verdict ✓ ships, run release_bundle.sh
 
-When the round-N diagnosis converges to a `<date>_round<N>_verdict.md`
-saying "all green", run **on laptop (NOT on cluster-A)**:
+When the latest `cluster/trial/results/*_verdict.md` says "all green"
+(applies to both the trial verdict AND the pilot full-data verdict —
+whichever is the latest authority for "pipeline works end-to-end"),
+run **on laptop (NOT on cluster-A)**:
 
 ```bash
 bash cluster/release_bundle.sh
 ```
 
-This packs `cluster/` (excluding `trial/`, `outputs/`, `results/`,
-the local-dev `release_bundle.sh` itself, and macOS metadata) into
-`cluster-bundle-<date>-<sha>.tgz`, logs the release in
-`cluster/RELEASES.md`, and prints the next steps for sending to off-site collaborator.
-This is the **only protocol-defined Loop 1 → Loop 2 transition** —
-don't manually tar things; release_bundle.sh enforces the verdict
-check + provenance logging.
+This:
 
-Off-site collaborator unpacks the tarball, edits `cluster/run_config.sh` (one file,
-~6 lines), runs `sbatch cluster/slurm/full_analysis.slurm` (her cluster
-has SLURM — primary path) or `bash cluster/run_analysis.sh` (fallback).
-See `cluster/HOWTO_run_full_data_zh.md` for the full-data analysis workflow.
+1. Verifies the latest `cluster/trial/results/*_verdict.md` exists.
+2. Records git SHA + date in `cluster/RELEASES.md`.
+3. Prints a **cyberduck-upload reminder** (cluster-A has no git, so the
+   user must manually refresh `/mnt/nfs/ugstu/liuzx/2D-Binding/cluster/`
+   to reflect the released SHA — `rm -rf` the stale cluster/ on
+   cluster-A then cyberduck-upload local cluster/).
+4. Prints copy-paste templates: the rsync command the off-site
+   collaborator runs + a WeChat message draft for the user to send her.
+5. Does **NOT** produce a tarball — the handoff is via shared filesystem
+   on cluster-A, not file transfer.
 
-The double-loop continues via `cluster/outputs/` ← the off-site distilled
-outputs, and `cluster/results/` ← Claude's analysis (which MUST include
-a "B-revision impact" section per
+This is the only protocol-defined Loop 1 → Loop 2 transition; don't
+skip release_bundle.sh because it's where the verdict check +
+RELEASES.md provenance happen.
+
+Off-site collaborator rsyncs `cluster/` from cluster-A to her work dir,
+typically does NOT need to edit `cluster/run_config.sh` (auto-detect
+handles MD_PARENT when the bundle is placed under `<md_root>/2D-Binding-fullrun/`),
+runs `sbatch cluster/slurm/full_analysis.slurm` (her cluster has SLURM —
+primary path) or `bash cluster/run_analysis.sh` (fallback). See
+`cluster/HOWTO_run_full_data_zh.md` for the full Chinese walkthrough.
+
+The double-loop continues via `cluster/outputs/<date>_round<N>/`
+← distilled outputs the off-site collaborator cp's into the shared
+dir, and `cluster/results/<date>_round<N>_analysis.md` ← Claude's
+analysis (which MUST include a "B-revision impact" section per
 `log/decisions/007_loop2_b_revision_playbook.md`).
 
 ## File overview

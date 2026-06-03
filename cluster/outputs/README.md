@@ -1,7 +1,6 @@
 ---
-purpose: 'Convention: distilled tarball from the off-site run unpacks into <YYYY-MM-DD>/ subdir
-  here'
-audience: user (after off-site collaborator sends data) + Claude
+purpose: "Convention: off-site distilled results land in <YYYY-MM-DD>_round<N>/ subdirs here (cp'd by the off-site collaborator into this shared dir; downloaded to laptop via cyberduck)"
+audience: user (manages laptop ↔ cluster-A sync) + Claude (reads round dirs for Loop 2 analysis)
 status: current
 ---
 
@@ -9,10 +8,14 @@ status: current
 
 ## Purpose
 
-The off-site collaborator runs `bash cluster/run_analysis.sh` on her server (where her
-full MD data lives). It produces `distilled/` with ~5 MB of analysis
-tables and bootstrap data. She sends `distilled/` back via
-WeChat/email; the user untars it here.
+The off-site collaborator runs `bash cluster/run_analysis.sh` (or the
+SBATCH wrapper) on her cluster. It produces `distilled/` with ~5 MB of
+analysis tables and bootstrap data. She **does not transfer files** —
+she has shared filesystem access to cluster-A, so she just `cp`s the
+distilled directory into this folder under a dated round subdir.
+
+The user then cyberduck-downloads the round dir to the laptop and
+commits/pushes it.
 
 ## Convention
 
@@ -37,13 +40,24 @@ provenance.
 
 ## How to populate
 
+The off-site collaborator runs (on her cluster, after the SLURM job
+finishes):
+
 ```bash
-# After off-site collaborator sends back distilled.tgz via WeChat/email
-mkdir -p cluster/outputs/$(date -I)_round1
-tar xzf ~/Downloads/distilled.tgz -C cluster/outputs/$(date -I)_round1/ --strip-components 1
+ROUND_DIR=/mnt/nfs/ugstu/liuzx/2D-Binding/cluster/outputs/$(date -I)_round1
+mkdir -p $ROUND_DIR
+cp -R $DEST/cluster/outputs/distilled/* $ROUND_DIR/
+# Then WeChat-pings Zengxuan: "distilled is in $ROUND_DIR"
+```
+
+Then the user (on laptop) cyberduck-downloads the round dir and commits:
+
+```bash
+# cyberduck DOWNLOAD /mnt/.../cluster/outputs/<date>_round1/ → local cluster/outputs/
+cd /Users/liuzengxuan/VSCode/2D-Binding
 git add cluster/outputs/$(date -I)_round1/
-git commit -m "outputs: off-site collaborator round 1 distilled results"
-git push
+git commit -m "outputs: round 1 distilled results from off-site full-data run"
+git push origin main
 ```
 
 ## Round termination

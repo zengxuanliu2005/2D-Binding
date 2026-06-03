@@ -113,17 +113,23 @@ handoffs which are now backfilled into log/sessions/.
 
 ## Cluster reference (compact)
 
-- **cluster-A**: `master`, repo path `/mnt/nfs/ugstu/liuzx/2D-Binding-main`.
-  conda at `/opt/miniconda3`, sbatch present, `gpu*` partition with 8 idle nodes.
-- **cluster-B**: the off-site compute server, NOT accessible to us. The off-site collaborator runs
-  bundle on it and emails back distilled tarball.
+- **cluster-A**: hostname `master`, shared NFS path `/mnt/nfs/ugstu/liuzx/`.
+  conda at `/opt/miniconda3`, sbatch present, `gpu` partition (`n01`).
+  Both the user and the off-site collaborator have ssh + filesystem access here.
+  User keeps `/mnt/nfs/ugstu/liuzx/2D-Binding/cluster/` in sync with the
+  laptop via cyberduck (cluster-A has no git, no permission to install one).
+- **Off-site full-data run**: the collaborator rsyncs cluster/ from
+  cluster-A to her own work dir (typically `<her_md_root>/2D-Binding-fullrun/cluster/`),
+  runs `sbatch cluster/slurm/full_analysis.slurm`, then `cp`s distilled/
+  back into `/mnt/nfs/ugstu/liuzx/2D-Binding/cluster/outputs/<date>_round<N>/`.
+  No tar / WeChat / email file transfer — handoff is via the shared filesystem.
 - **Workstream C** (constrained-h slab MD): blocked on cu_gala install
   on cluster-A. § 0 bundle path is the alternative.
 
 ## Reference papers
 
 `ref/`: Hu 2013 (PNAS), Xu 2015 (JCP), Weikl 2016 (Cell Adh & Migr),
-Hou 2025 (JCTC). The the source PPT (`2D-binding-MD.pdf`) is in repo root.
+Hou 2025 (JCTC). The source PPT (`2D-binding-MD.pdf`) is in repo root.
 
 ## Anti-patterns (do not repeat)
 
@@ -132,7 +138,7 @@ Hou 2025 (JCTC). The the source PPT (`2D-binding-MD.pdf`) is in repo root.
   The current B2 framework (discrete WLC MC) spans all 3 classes by construction.
 - Do NOT tune terms to hit a target. The S1-S23 closure passes by construction
   on s001; the L_c sensitivity is exposed by B1 reimpl deliberately to test
-  the the off-site framework.
+  the off-site framework.
 - Do NOT introduce `phd_*` filenames — renamed to purpose-based names in
   session 3 (see ADR for the rename rationale embedded in
   `log/sessions/session3_refactor.md`).

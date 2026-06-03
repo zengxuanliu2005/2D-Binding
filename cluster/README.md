@@ -1,6 +1,6 @@
 ---
 purpose: "Top-level cluster/ guide: navigation, structure, and how the two double-loops work"
-audience: user (on laptop or cluster-A) + off-site collaborator (after receiving tarball) + Claude (next session)
+audience: user (on laptop or cluster-A) + off-site collaborator (rsyncs from cluster-A) + Claude (next session)
 status: current
 ---
 
@@ -9,7 +9,7 @@ status: current
 This folder serves three roles in one tree:
 
 1. **Validation harness** (`cluster/trial/`) — user runs trial scripts on cluster-A.
-2. **Full-data analysis bundle** (everything except `trial/`, `outputs/`, `results/`) — what we tar up and send to the off-site full-data run.
+2. **Full-data analysis bundle** (everything except `trial/`, `outputs/`, `results/`) — what the off-site collaborator rsyncs from cluster-A. Released via `release_bundle.sh`.
 3. **Double-loop IO area** (`cluster/outputs/` ← inbound data, `cluster/results/` → Claude's analysis) — per ADR 005.
 
 ## Top-level layout
@@ -20,7 +20,7 @@ cluster/
 ├── HOWTO_run_full_data_zh.md          ← Chinese walkthrough for running the bundle
 ├── run_config.sh                      ← single config file the runner edits
 ├── run_analysis.sh                    ← bash fallback orchestrator
-├── release_bundle.sh                  ← LOCAL: packs cluster/ → tarball (after trial verdict ✓)
+├── release_bundle.sh                  ← LOCAL: authorises release after trial verdict ✓ (logs in RELEASES.md, prints cyberduck/rsync templates — does NOT tar)
 ├── RELEASES.md                        ← log of all bundle releases (created on first release)
 ├── requirements.txt                   ← pip deps for the analysis stack
 │
@@ -47,7 +47,7 @@ cluster/
 │   └── README.md
 │
 ├── outputs/                           ← see outputs/README.md
-│   └── README.md                        Loop 2 inbound: distilled tarball lands here
+│   └── README.md                        Loop 2 inbound: off-site distilled cp'd into <date>_round<N>/
 ├── results/                           ← see results/README.md
 │   └── README.md                        Loop 2 outbound: Claude writes <date>_round<N>_analysis.md here
 │
@@ -76,24 +76,24 @@ Per `cluster/trial/README.md`. Round-by-round:
 4. Claude: reads outputs → writes `cluster/trial/results/<date>_round<N>_diagnosis.md` + script patches
 5. Loop until verdict.md says PASSED
 
-**Loop 1 closure**: when verdict ✓ exists, run `bash cluster/release_bundle.sh` on the laptop to pack the bundle.
+**Loop 1 closure**: when verdict ✓ exists, run `bash cluster/release_bundle.sh` on the laptop. It records the released git SHA in `cluster/RELEASES.md` and prints (a) a cyberduck-upload reminder (cluster-A has no git, so the user must cyberduck the laptop's cluster/ to cluster-A to refresh it to this SHA) and (b) the rsync + WeChat templates to send the off-site collaborator. It does NOT produce a tarball.
 
 ### Loop 2 (full data) — off-site collaborator runs bundle, Claude analyzes returns
 
 Per ADR 005 + ADR 007 playbook:
 
-1. User: sends `cluster-bundle-<date>-<sha>.tgz` to off-site collaborator (WeChat/email)
-2. Off-site: unpacks → edits `cluster/run_config.sh` (~6 lines) → `sbatch cluster/slurm/full_analysis.slurm`
-3. Off-site: `tar czf distilled.tgz cluster/outputs/distilled/` → sends back
-4. User: unpacks to `cluster/outputs/<date>_round<N>/` → `git push`
-5. Claude: writes `cluster/results/<date>_round<N>_analysis.md` (MUST include B-revision impact section per ADR 007)
-6. Loop until verdict says §0 hypothesis CONFIRMED or REJECTED
+1. User: refreshes cluster-A via cyberduck so it reflects the released SHA, then WeChat-pings the off-site collaborator with the rsync template.
+2. Off-site: rsyncs `cluster/` from `/mnt/nfs/ugstu/liuzx/2D-Binding/cluster/` to her own work dir (excluding `trial/`, `outputs/`, `results/`); auto-detect usually means no `run_config.sh` edit; `sbatch cluster/slurm/full_analysis.slurm`.
+3. Off-site: `cp -R distilled/*` to `/mnt/nfs/ugstu/liuzx/2D-Binding/cluster/outputs/<date>_round<N>/` and WeChat-pings the user.
+4. User: cyberduck-downloads the round dir to laptop, `git push`.
+5. Claude: writes `cluster/results/<date>_round<N>_analysis.md` (MUST include B-revision impact section per ADR 007).
+6. Loop until verdict says §0 hypothesis CONFIRMED or REJECTED.
 
 ## Quick-reference commands
 
 ```bash
-# As user on cluster-A — run trial rounds
-ssh master && cd /mnt/nfs/ugstu/liuzx/2D-Binding && git pull
+# As user on cluster-A — run trial rounds (cyberduck-upload cluster/ first; no git on cluster-A)
+ssh master && cd /mnt/nfs/ugstu/liuzx/2D-Binding
 mkdir -p cluster/trial/outputs/$(date -I)_round1
 bash cluster/trial/01_env_check.sh    > cluster/trial/outputs/$(date -I)_round1/01_env_check.out 2>&1
 bash cluster/trial/02_paths_check.sh  > cluster/trial/outputs/$(date -I)_round1/02_paths_check.out 2>&1
@@ -104,15 +104,16 @@ mkdir -p cluster/trial/outputs/$(date -I)_round2/compute
 sbatch -o cluster/trial/outputs/$(date -I)_round2/compute/%J.out \
        -e cluster/trial/outputs/$(date -I)_round2/compute/%J.err \
        cluster/trial/05_compute_node_check.slurm
+# → cyberduck-download the round dirs back to laptop and git commit/push
 
-# As user on laptop — release the bundle (after trial verdict ✓)
+# As user on laptop — authorise release (after trial verdict ✓)
 bash cluster/release_bundle.sh
-# → produces cluster-bundle-<date>-<sha>.tgz; logs in cluster/RELEASES.md
+# → appends row to cluster/RELEASES.md; prints cyberduck reminder + rsync/WeChat templates
 
-# As off-site collaborator (after receiving tarball)
-vim cluster/run_config.sh           # edit MD_PARENT etc.
-sbatch cluster/slurm/full_analysis.slurm
-tar czf distilled.tgz cluster/outputs/distilled/  # send this back
+# As off-site collaborator — see cluster/HOWTO_run_full_data_zh.md
+# Summary:
+#   rsync (excluding trial/outputs/results) → sbatch full_analysis.slurm
+#   → cp distilled/ to /mnt/nfs/ugstu/liuzx/.../outputs/<date>_round1/
 ```
 
 ## Trial round status
