@@ -598,3 +598,36 @@ Previous attempts (all merged into main, branches deleted):
     Schlitter conformational     → results/conf_entropy_schlitter.md
     Harmonised observable extractors → results/extracted/
 ```
+
+---
+
+## 14. Sessions 6a–9 — meta plumbing + B2 theory chain + cluster validation
+
+(Brief continuation, 2026-05-31 to 2026-06-03. Full per-session detail in `log/sessions/<date>_*.md`; per-step theory detail in `derivation/01..05/`; per-session commit hashes in `PLAN.md` Phase 6 list.)
+
+- **Session 1** (2026-05-31): A1 diagnosis (rigid 22% K2D gap = unbound-sampling bias, NOT discretisation), A3 bootstrap (σ on closure terms), B1 = three-term Marko-Siggia reimpl of source PPT slide 25.
+- **Session 6a** (2026-06-02): metadata bootstrap — created `log/sessions/`, `log/decisions/`, `log/calibration/`; YAML frontmatter on 45 md files for token-efficient agent reads. ADR 001-006.
+- **Session 6b** (2026-06-02): **B2 chain completed** — derivation/01_wlc_endpoint_distribution (P(R; lp, Lc) discrete WLC MC), /02_z_marginal (P_z with anchor cone), /03_k2d_l_kernel (K2D(l) convolution), /04_xi_rl_from_lp (B2 beats Xu 2015 by 8-14× on lp ratios), /05_fconf_selfconsistency (anchor-cone surcharge Δ = +3.79 / +1.21 / -0.04 kBT — monotone in lp). 18/20 acceptance criteria pass.
+- **Session 7** (2026-06-02): double-loop protocol crystallised — SBATCH wrapper for off-site full-data run, ADR 007 Loop 2 playbook (S1-S8 conflict map + per-scenario actions).
+- **Session 8** (2026-06-02): repo-wide person-reference cleanup (no more 学姐/senior in active files), 4 new cluster/ index READMEs, trial round 1+2 verdict (login + compute on n01 both ✓).
+- **Session 9** (2026-06-03): **pilot full-data ✓** on cluster-A (3 iterations exposed 3 latent path bugs: chain_coords path mismatch, per-system symlink missing, banner damage; all patched). Off-site collaborator workflow rewritten from tar+WeChat to cp+cyberduck (she has shared filesystem access to cluster-A). MD_PARENT auto-detect added so the bundle is zero-edit even after cyberduck overwrites. **Pilot pipeline validated end-to-end; off-site release authorised** (`cluster/RELEASES.md` first row).
+
+### Workstream C (constrained-h slab MD) status
+
+Still BLOCKED on cu_gala / pygamd installation on cluster-A. Skeleton at `cluster/scripts/nvt-md-constrained-h.py` (z-tether harmonic constraint, no R-L binding potential); `cluster/scripts/analyze_slab_traj.py` has the K2D(l=h) Mayer integral wired up + a synthetic-data pilot path (Session 6c). The `_load_slab_frames_real()` hook is the single integration point — fill it with traj.xyz parsing when slab MD data lands.
+
+§0 (full-data analysis bundle) is the alternative: it does NOT require pygamd and can answer the "data volume" hypothesis directly. As of Session 9, the bundle is released; awaiting the off-site collaborator's distilled return for Loop 2 analysis per ADR 007.
+
+### Open-question status (replaces the early-session OQ inventory)
+
+| OQ | Status as of Session 9 |
+|---|---|
+| OQ1 rigid K2D 22% gap | diagnosed (A1, Session 1): unbound-sampling bias, not discretisation; **persists at 2-replica pilot** (round 3 of 2026-06-03), supporting "intrinsic bias not data-volume artifact" |
+| OQ2 chain-response K10/K01 master curve | merged with OQ1 (same physical origin) |
+| OQ3 lp-parametrised K2D(l; lp) | **closed** by B2.1-B2.4 (Session 5+6b); B2 beats Xu 2015 by 8-14× on rigid:flex / rigid:semi ratios |
+| OQ4 S1-S23 bootstrap σ | closed (A3, Session 1); σ_sum ≈ 0.03 kBT, gaps systematic at 14σ; with 2 replicas the gap shrinks substantially (Session 9 pilot finding) |
+| OQ5 s25 three-term reimpl | closed (B1, Session 1); confirmed in pilot — still ~1 kBT from PPT s25, awaiting full-data resolution per ADR 007 S1/S2 |
+| OQ6 essay v2 | scheduled for Session 11 |
+| OQ7 Chinese slides | Session 12 |
+| OQ8 poster | Session 12 |
+| OQ9 figures academic style | scheduled for Session 10 (D1 framework) |

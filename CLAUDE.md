@@ -143,6 +143,61 @@ Hou 2025 (JCTC). The source PPT (`2D-binding-MD.pdf`) is in repo root.
   session 3 (see ADR for the rename rationale embedded in
   `log/sessions/session3_refactor.md`).
 
+## Cross-cutting conventions
+
+The following apply to every workstream. Pointers to canonical sources.
+
+### Pilot-first discipline
+
+Any heavyweight compute script must support `--pilot` mode that finishes
+in < 60 s on a minimal input case + asserts at least one sanity invariant
+(magnitude / probability normalisation / degenerate limit / etc.). Pilot
+output goes to `results/scratch/<name>/` (gitignored). Always pilot before
+production; record wall time in the commit message to project full-run cost.
+
+Examples: `scripts/xi_rl_lp_prediction.py --pilot`, `scripts/k2d_l_wlc_theory.py --pilot`,
+`cluster/scripts/analyze_slab_traj.py --pilot`, `cluster/run_analysis.sh --pilot`.
+
+### Parallel computing
+
+- Bootstrap / Monte Carlo / per-system loops: `ProcessPoolExecutor(max_workers=n_jobs)`,
+  CLI `--n-jobs`, default 1, production 8 (leave 2 cores for OS on 10-core boxes).
+  Templates in `scripts/closure_four_term.py:bootstrap_closure` and
+  `scripts/raw_tether_partition_k2d.py:bootstrap_area_curves`.
+- Set `os.environ["OPENBLAS_NUM_THREADS"]="1"` inside worker processes to
+  prevent BLAS-thread × ProcessPool oversubscription.
+- Every script's docstring must declare: is it parallel; on what axis;
+  pilot wall time; recommended `--n-jobs`.
+
+### Where to write what
+
+- "Why a formula / approximation" → `derivation/<NN>_<topic>/`
+- Numerical outputs (npz, tables, figures) → `results/`
+- Session-by-session narrative + decisions → `log/sessions/<date>_<slug>.md`
+- Immutable ADRs (numbered, append-only) → `log/decisions/`
+- Running prediction-vs-measurement tables → `log/calibration/`
+- WeChat reply drafts for off-site collaborator → `cluster/WECHAT_TEMPLATES_zh.md`
+- Chronological history of attempts that did / didn't work → `JOURNEY.md`
+
+See `log/README.md` "How log/ relates to derivation/ + results/" matrix for the
+detailed rule of thumb.
+
+### Derivation folder convention
+
+Per `derivation/README.md` — each `derivation/<NN>_<topic>/` has the 5 standard
+files (`00_intent / 01_setup / [02_step] / 03_result / 04_numerics / 05_open_questions`),
+YAML frontmatter on each, equation numbering local to subfolder + cross-folder
+references like `<folder>/<file>:(N.M)`. Status flow:
+`drafting → under-review → accepted | superseded-by-<NN>`.
+
+### Loop 2 (off-site data return → B revision)
+
+When off-site distilled returns to `cluster/outputs/<date>_round<N>/`, apply
+the decision tree in `log/decisions/007_loop2_b_revision_playbook.md` —
+scenarios S1-S8 each prescribe (a) which `derivation/0X/05_open_questions.md`
+gets refined, (b) which `log/calibration/*.md` row to flip, (c) which session
+log to write. **Do NOT** make derivation edits without consulting the playbook.
+
 ## Key file pointers
 
 - B2 theory entry: `derivation/01_wlc_endpoint_distribution/00_intent.md`

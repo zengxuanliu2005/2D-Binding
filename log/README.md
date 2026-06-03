@@ -166,3 +166,21 @@ related_decisions: [adr_id, ...]
 | closure_methods_consensus  | open | 5 methods within 0.22 kBT consensus on flex-rigid; semi/flex disputed by L_c |
 | fconf_three_way            | open | B2.5 reveals anchor-cone surcharge +3.8/+1.2/-0.04 kBT (rigid/semi/flex) that MS misses |
 | b2_chain_completeness      | resolved | B2 chain 18/20 acceptance checks pass; 2 documented physical caveats (σ_z 1.8× wider, semi:flex inversion from truncation) |
+
+## How log/ relates to derivation/ + results/
+
+Different folders carry different kinds of information. Use the matrix to pick where to write what:
+
+| Folder | What lives here | Time-axis | Who reads |
+|---|---|---|---|
+| `derivation/` | Theory derivations (the **WHY**: equations, approximations, limit checks) | atemporal — always latest | reviewers, off-site collaborator, future Claude |
+| `results/` | Numerical outputs (the **WHAT**: npz, md tables, figures) | atemporal — git-tracked, overwritten on rerun | any analyst |
+| `log/sessions/` | Narrative record of what we did + decisions made in each session | time-axis — append-only | new agent picking up after a session ends |
+| `log/decisions/` | Immutable ADRs — numbered, append-only, "superseded" not deleted | time-axis — by ADR number | any audit / "why did we choose X" question |
+| `log/calibration/` | Running tables of prediction vs measurement | time-axis — append rows on data return | when cluster / off-site data arrives |
+
+Rule of thumb: if it's "what is the formula" or "what is the number", it goes in derivation/ or results/. If it's "why did we choose this approach over that one" or "here's what happened in session N", it goes in log/.
+
+## Cluster path async branches → ADR 007
+
+The decision tree for "off-site distilled returns → which derivation Q to close + which calibration row to flip" used to live in this plan; it now lives in `log/decisions/007_loop2_b_revision_playbook.md`. Refer to it instead of duplicating.

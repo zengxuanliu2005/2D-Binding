@@ -12,6 +12,53 @@ This folder serves three roles in one tree:
 2. **Full-data analysis bundle** (everything except `trial/`, `outputs/`, `results/`) — what the off-site collaborator rsyncs from cluster-A. Released via `release_bundle.sh`.
 3. **Double-loop IO area** (`cluster/outputs/` ← inbound data, `cluster/results/` → Claude's analysis) — per ADR 005.
 
+## Data access topology
+
+```
+                          Local laptop (Zengxuan)
+                                  │
+                                  │ git push / pull (only laptop ↔ GitHub)
+                                  │
+                                  │ cyberduck UPLOAD cluster/ (no git on cluster-A)
+                                  │ cyberduck DOWNLOAD trial outputs + Loop 2 round dirs
+                                  ▼
+                  cluster-A: master, /mnt/nfs/ugstu/liuzx/2D-Binding/
+                          shared between user and off-site collaborator
+                                  │
+              ┌───────────────────┼───────────────────┐
+              │                   │                   │
+        cluster/trial/      cluster/outputs/      cluster/scripts/
+        (user runs here     (Loop 2 inbound:      cluster/slurm/
+         to validate the    distilled cp'd        cluster/run_*.sh
+         env + pipeline)    here by off-site)     etc. — the bundle
+                                                       │
+                                                       │ off-site collaborator
+                                                       │ rsyncs to her own
+                                                       │ <md_root>/2D-Binding-fullrun/
+                                                       ▼
+                          Off-site cluster (collaborator's home cluster)
+                                  │
+                          full-data MD already at <md_root>/<system>/
+                          sbatch full_analysis.slurm → distilled output
+                                  │
+                                  │ cp distilled/ back to
+                                  │ /mnt/nfs/ugstu/liuzx/.../cluster/outputs/<date>_round1/
+                                  ▼
+                          (cluster-A — shared dir)
+                                  │
+                                  │ cyberduck DOWNLOAD round dir
+                                  ▼
+                          Local laptop → git commit → Loop 2 analysis
+```
+
+**Key constraints**:
+
+- **Cluster-A has no git**. Sync laptop ↔ cluster-A is via cyberduck (SFTP). After every laptop commit, user must cyberduck-upload `cluster/` to refresh cluster-A (script defaults are zero-edit so the upload is straight overwrite).
+- **The off-site collaborator's MD data never leaves her cluster**. Only the ~5 MB distilled outputs come back via the shared cluster-A directory.
+- **One shared filesystem, two roles**. The off-site collaborator and the user both have ssh + read/write access to `/mnt/nfs/ugstu/liuzx/`. The user owns the `cluster/` tree there (releases via cyberduck); the off-site collaborator drops her distilled results into `cluster/outputs/<date>_round<N>/`.
+
+This replaces the original (Session 1-era) cluster-A vs cluster-B + WeChat email model.
+
 ## Top-level layout
 
 ```
