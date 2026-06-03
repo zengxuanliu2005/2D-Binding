@@ -19,7 +19,7 @@ navigation_map:
   - { path: results/,     purpose: numerical outputs (md + npz + figures),                       read_for: "current measured / predicted numbers" }
   - { path: writeup/,     purpose: stage essay (English), upcoming Chinese essay/slides/poster, read_for: "academic deliverables" }
   - { path: ref/,         purpose: reference papers + ref/nvt-md.py force-field source of truth, read_for: "literature, MD force field" }
-  - { path: PLAN.md,      purpose: legacy phase tracker (now mostly in user-dir plan file),     read_for: "high-level phase summary" }
+  - { path: PLAN.md,      purpose: active session plan (lean; next-session focus only),         read_for: "what to do next; expected outcomes; correction triggers" }
   - { path: JOURNEY.md,   purpose: historical chronology of attempts (incl. 3 that didn't close),read_for: "what we tried and rejected" }
 ---
 

@@ -21,3 +21,6 @@ results/scratch/
 
 # Large simulation outputs
 outputs/
+
+# Claude Code plan-mode local working files (same pattern as settings.local.json)
+.claude/plans/
