@@ -1,0 +1,292 @@
+
+ℹ  SLURM detected. For better resource management, consider:
+     sbatch /mnt/nfs/ugstu/liuzx/2D-Binding/cluster/slurm/full_analysis.slurm
+   Continuing with bash mode in 3 s (Ctrl-C to abort) ...
+
+╔════════════════════════════════════════════════════════════════════╗
+║  cluster/run_analysis.sh — full-data rerun of A1/A3/B1            ║
+╚════════════════════════════════════════════════════════════════════╝
+
+PURPOSE
+─────────
+Walks the off-site MD data, extracts chain_coords per replica, merges per
+system, then runs:
+
+  1. closure_four_term.py --bootstrap         (S1-S23 4-term decomposition)
+  2. closure_wlc_three_term.py --bootstrap     (3-term WLC closure)
+  3. raw_tether_partition_k2d.py        (ab initio K2D)
+  4. diagnose_bound_vs_unbound.py      (bound vs unbound geometry)
+  5. reconcile_methods.py               (5-method ΔΔF consensus)
+
+All outputs go to distilled/ (≈ 5 MB total). cp distilled/ to
+/mnt/nfs/ugstu/liuzx/2D-Binding/cluster/outputs/<date>_round1/ so
+Zengxuan can pick it up directly.
+
+[config sourced from cluster/run_config.sh]
+[PILOT] Pilot mode: 2 replicas per system, n_bootstrap=20
+cluster/run_analysis.sh: line 95: cd: /path/to/your/MD/data/root: No such file or directory
+=== run_full_analysis.sh — start 2026-06-03T10:45:37+08:00 ===
+BUNDLE_ROOT=/mnt/nfs/ugstu/liuzx/2D-Binding/cluster  MD_PARENT=/path/to/your/MD/data/root  N_JOBS=8  PILOT=--pilot
+
+--- inventory ---
+  WARN: /path/to/your/MD/data/root/15_120x120_K100_EPS05 not found, skipping
+  WARN: /path/to/your/MD/data/root/15_120x120_K10_EPS05 not found, skipping
+  WARN: /path/to/your/MD/data/root/22_120x120_K01_EPS05 not found, skipping
+
+--- extract (8 workers in parallel) ---
+  0 replicas to extract
+
+--- merge per-system ---
+
+╔════════════════════════════════════════════════════════════════════╗
+║  cluster/scripts/merge_chain_coords.py                            ║
+║  Concatenate per-replica npz into one full-data npz per system    ║
+╚════════════════════════════════════════════════════════════════════╝
+
+PURPOSE
+─────────
+Walks <input-root>/<system>/<replica>/chain_coords.npz for every system
++ replica, concatenates along the frame axis, and writes one merged npz
+per system to <output-root>/<system>/chain_coords.npz.
+
+▶  config: n_systems=3, n_jobs=3, pilot=True
+   input-root  : /mnt/nfs/ugstu/liuzx/2D-Binding/cluster/outputs/extracted
+   output-root : /mnt/nfs/ugstu/liuzx/2D-Binding/cluster/outputs/chain_coords
+
+
+=== summary ===
+  SKIP  15_120x120_K100_EPS05: no s### subdirs in /mnt/nfs/ugstu/liuzx/2D-Binding/cluster/outputs/extracted/15_120x120_K100_EPS05
+  SKIP  15_120x120_K10_EPS05: no s### subdirs in /mnt/nfs/ugstu/liuzx/2D-Binding/cluster/outputs/extracted/15_120x120_K10_EPS05
+  SKIP  22_120x120_K01_EPS05: no s### subdirs in /mnt/nfs/ugstu/liuzx/2D-Binding/cluster/outputs/extracted/22_120x120_K01_EPS05
+
+--- closure_four_term (S1-S23 four-term) ---
+
+╔════════════════════════════════════════════════════════════════════╗
+║  closure_four_term.py — S1-S23 four-term ΔF decomposition         ║
+╚════════════════════════════════════════════════════════════════════╝
+
+PURPOSE
+─────────
+Computes the per-system free-energy decomposition
+
+    ΔF = F_trans + F_conf + F_bond + F_rot
+
+per the S1-S23 framework, using chain_coords.npz inputs from
+system_inputs.py and formulas from free_energy_terms.py. Then for each
+of the three pair comparisons (flex−rigid, semi−rigid, semi−flex)
+computes ΔΔF_term and ΔΔF_sum, and compares against the target ΔΔF.
+
+With --bootstrap, resamples frames per system independently and reports
+mean ± σ for every ΔΔF term. Use --n-jobs 8 for parallel.
+
+Traceback (most recent call last):
+  File "/mnt/nfs/ugstu/liuzx/2D-Binding/cluster/scripts/closure_four_term.py", line 367, in <module>
+    main()
+  File "/mnt/nfs/ugstu/liuzx/2D-Binding/cluster/scripts/closure_four_term.py", line 214, in main
+    inputs = load_all()
+             ^^^^^^^^^^
+  File "/mnt/nfs/ugstu/liuzx/2D-Binding/cluster/scripts/system_inputs.py", line 189, in load_all
+    out[label] = load_system(npz, label, sys_name)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/nfs/ugstu/liuzx/2D-Binding/cluster/scripts/system_inputs.py", line 149, in load_system
+    raw = load_raw(npz_path)
+          ^^^^^^^^^^^^^^^^^^
+  File "/mnt/nfs/ugstu/liuzx/2D-Binding/cluster/scripts/system_inputs.py", line 137, in load_raw
+    d = np.load(npz_path)
+        ^^^^^^^^^^^^^^^^^
+  File "/opt/miniconda3/lib/python3.11/site-packages/numpy/lib/npyio.py", line 427, in load
+    fid = stack.enter_context(open(os_fspath(file), "rb"))
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/mnt/nfs/ugstu/liuzx/2D-Binding/cluster/outputs/chain_coords/15_120x120_K100_EPS05/chain_coords.npz'
+WARN: closure_four_term failed
+
+--- closure_wlc_three_term (3-term WLC) ---
+
+╔════════════════════════════════════════════════════════════════════╗
+║  closure_wlc_three_term.py — trans + rot + Marko-Siggia WLC       ║
+╚════════════════════════════════════════════════════════════════════╝
+
+PURPOSE
+─────────
+The the source PPT slide 25 three-term closure — drops the S17 end-volume
+term and replaces the Gaussian S4 conformational term with the
+Marko-Siggia integrated WLC stretching free energy.
+
+Parameters
+  L_c  : nominal ecto contour (default 12 nm = 12 protein bonds × 1.0 σ)
+  l_p  : persistence length from xi_rl_candidates.LP_PHD (84.6, 8.18, 1.14 nm)
+  D    : bound-chain z-reach from system_inputs.D_bound
+
+With --bootstrap, resamples frames per system and reports σ on each
+ΔΔF term. Use --n-jobs 8 for parallel.
+
+Traceback (most recent call last):
+  File "/mnt/nfs/ugstu/liuzx/2D-Binding/cluster/scripts/closure_wlc_three_term.py", line 355, in <module>
+    main()
+  File "/mnt/nfs/ugstu/liuzx/2D-Binding/cluster/scripts/closure_wlc_three_term.py", line 224, in main
+    inputs = load_all()
+             ^^^^^^^^^^
+  File "/mnt/nfs/ugstu/liuzx/2D-Binding/cluster/scripts/system_inputs.py", line 189, in load_all
+    out[label] = load_system(npz, label, sys_name)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/nfs/ugstu/liuzx/2D-Binding/cluster/scripts/system_inputs.py", line 149, in load_system
+    raw = load_raw(npz_path)
+          ^^^^^^^^^^^^^^^^^^
+  File "/mnt/nfs/ugstu/liuzx/2D-Binding/cluster/scripts/system_inputs.py", line 137, in load_raw
+    d = np.load(npz_path)
+        ^^^^^^^^^^^^^^^^^
+  File "/opt/miniconda3/lib/python3.11/site-packages/numpy/lib/npyio.py", line 427, in load
+    fid = stack.enter_context(open(os_fspath(file), "rb"))
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/mnt/nfs/ugstu/liuzx/2D-Binding/cluster/outputs/chain_coords/15_120x120_K100_EPS05/chain_coords.npz'
+WARN: closure_wlc_three_term failed
+
+--- raw_tether_partition (absolute K2D) ---
+
+╔════════════════════════════════════════════════════════════════════╗
+║  raw_tether_partition_k2d.py — ab initio K2D from MD              ║
+╚════════════════════════════════════════════════════════════════════╝
+
+PURPOSE
+─────────
+Reads outputs/<system>/s001/traj.xyz directly and integrates the
+soft-Boltzmann binding kernel over the lateral R-L bond-vector disk
+for each trial membrane separation h. Outputs:
+
+    K2D_eff(h) = (1/N_pairs) · Σ π·r_xy_max² · ⟨exp(-U_eff/kBT) - 1⟩
+    K2D,max    = max over h
+    ΔΔF(pair)  = -ln(K2D,a / K2D,b)
+
+No fitting to (ξ⊥, K2D) data — this is the ab initio prediction.
+
+With --bootstrap, resamples frames per system (each independently) and
+reports σ on K2D,max + ΔΔF. Use --n-jobs 8 for parallel.
+Use --systems rigid (or comma-list) to run only a subset.
+
+[rigid] extracting raw unbound features from outputs/15_120x120_K100_EPS05/s001
+Traceback (most recent call last):
+  File "/mnt/nfs/ugstu/liuzx/2D-Binding/cluster/scripts/raw_tether_partition_k2d.py", line 657, in <module>
+    raise SystemExit(main(sys.argv))
+                     ^^^^^^^^^^^^^^
+  File "/mnt/nfs/ugstu/liuzx/2D-Binding/cluster/scripts/raw_tether_partition_k2d.py", line 570, in main
+    feat = extract_raw_unbound_features(sys_dir, label)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/nfs/ugstu/liuzx/2D-Binding/cluster/scripts/raw_tether_partition_k2d.py", line 110, in extract_raw_unbound_features
+    topo = build_topology(sys_dir / "mol.psf")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/nfs/ugstu/liuzx/2D-Binding/cluster/scripts/topology.py", line 159, in build_topology
+    n_atoms, bonds = parse_psf(psf_path)
+                     ^^^^^^^^^^^^^^^^^^^
+  File "/mnt/nfs/ugstu/liuzx/2D-Binding/cluster/scripts/topology.py", line 87, in parse_psf
+    with open(psf_path) as f:
+         ^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/mnt/nfs/ugstu/liuzx/2D-Binding/cluster/outputs/15_120x120_K100_EPS05/s001/mol.psf'
+WARN: raw_tether_partition failed
+
+--- diagnose bound vs unbound bias ---
+WARN: diagnose failed
+
+--- reconcile methods (5-method consensus) ---
+
+╔════════════════════════════════════════════════════════════════════╗
+║  reconcile_methods.py — five-method ΔΔF consensus                 ║
+╚════════════════════════════════════════════════════════════════════╝
+
+PURPOSE
+─────────
+Compares five independent ΔΔF estimates:
+
+  1. Target — Hu master-curve K2D,max ratios (from the source PPT)
+  2. PhD PPT s25 — trans + rot + conf-WLC, her published values
+  3. Four-term decomposition (S1-S23) — local closure_four_term.py
+  4. Raw partition — bootstrap from raw_tether_partition_k2d.py
+  5. WLC three-term reimpl — local closure_wlc_three_term.py
+
+Reports pairwise gaps, z-scores against bootstrap σ, and an
+inverse-variance weighted consensus. Saves figure + markdown table.
+
+======================================================================
+Q2: Method reconciliation — ΔΔF consensus
+======================================================================
+
+--- Method ΔΔF values ---
+Method                    flex-rigid semi-rigid  semi-flex
+-------------------------------------------------------
+Target (Hu fit)               +3.560     +2.680     -0.900
+PhD PPT s25                   +3.640     +2.470     -1.180
+Four-term decomposition (S1-S23)     +3.960     +2.690     -1.270
+Raw partition                 +3.324     +2.409     -0.915
+s25 reimpl                    +5.231     +2.053     -3.178
+
+--- Pairwise method gaps (kBT) ---
+
+  flex-rigid:
+    Target (Hu fit)        vs PhD PPT s25           : 0.080
+    Target (Hu fit)        vs Four-term decomposition (S1-S23): 0.400
+    Target (Hu fit)        vs Raw partition         : 0.236
+    Target (Hu fit)        vs s25 reimpl            : 1.671
+    PhD PPT s25            vs Four-term decomposition (S1-S23): 0.320
+    PhD PPT s25            vs Raw partition         : 0.316
+    PhD PPT s25            vs s25 reimpl            : 1.591
+    Four-term decomposition (S1-S23) vs Raw partition         : 0.636
+    Four-term decomposition (S1-S23) vs s25 reimpl            : 1.271
+    Raw partition          vs s25 reimpl            : 1.907
+
+  semi-rigid:
+    Target (Hu fit)        vs PhD PPT s25           : 0.210
+    Target (Hu fit)        vs Four-term decomposition (S1-S23): 0.010
+    Target (Hu fit)        vs Raw partition         : 0.271
+    Target (Hu fit)        vs s25 reimpl            : 0.627
+    PhD PPT s25            vs Four-term decomposition (S1-S23): 0.220
+    PhD PPT s25            vs Raw partition         : 0.061
+    PhD PPT s25            vs s25 reimpl            : 0.417
+    Four-term decomposition (S1-S23) vs Raw partition         : 0.281
+    Four-term decomposition (S1-S23) vs s25 reimpl            : 0.637
+    Raw partition          vs s25 reimpl            : 0.356
+
+  semi-flex:
+    Target (Hu fit)        vs PhD PPT s25           : 0.280
+    Target (Hu fit)        vs Four-term decomposition (S1-S23): 0.370
+    Target (Hu fit)        vs Raw partition         : 0.015
+    Target (Hu fit)        vs s25 reimpl            : 2.278
+    PhD PPT s25            vs Four-term decomposition (S1-S23): 0.090
+    PhD PPT s25            vs Raw partition         : 0.265
+    PhD PPT s25            vs s25 reimpl            : 1.998
+    Four-term decomposition (S1-S23) vs Raw partition         : 0.355
+    Four-term decomposition (S1-S23) vs s25 reimpl            : 1.908
+    Raw partition          vs s25 reimpl            : 2.263
+
+--- Statistical significance ---
+(σ on target from curve_fit covariance; σ on raw partition from bootstrap)
+Pair            target σ    raw σ  max gap  z-score verdict
+------------------------------------------------------------
+flex-rigid        0.0256   0.0650    0.636     3.38  significant (z>3)
+semi-rigid        0.0192   0.0510    0.281     4.97  significant (z>3)
+semi-flex         0.0301   0.0710    0.370     0.19  statistical
+
+⚠️ Target σ from curve_fit covariance underestimates true uncertainty
+  for semi/flex (Hu master curve model assumption violated).
+  TRUE σ on target is likely 0.1-0.2 kBT based on data scatter.
+
+--- Inverse-variance weighted consensus ---
+  flex-rigid: consensus = +3.423 ± 0.051 kBT (target +3.56, gap -0.137)
+  semi-rigid: consensus = +2.465 ± 0.043 kBT (target +2.68, gap -0.215)
+  semi-flex: consensus = -0.945 ± 0.054 kBT (target -0.90, gap -0.045)
+
+Saved results/figures/method_reconciliation.png
+Saved results/method_reconciliation.md
+
+--- distill outputs ---
+  + method_reconciliation.md
+  + method_reconciliation.png
+
+=== run_full_analysis.sh DONE 2026-06-03T10:45:38+08:00 ===
+Total distilled output size:
+152K	/mnt/nfs/ugstu/liuzx/2D-Binding/cluster/outputs/distilled
+
+Distilled outputs are at:
+  /mnt/nfs/ugstu/liuzx/2D-Binding/cluster/outputs/distilled
+
+Off-site full-data collaborator: cp the distilled/ folder into
+  /mnt/nfs/ugstu/liuzx/2D-Binding/cluster/outputs/$(date -I)_round1/
+so Zengxuan can pick them up directly (no WeChat tar transfer needed).

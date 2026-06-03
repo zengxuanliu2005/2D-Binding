@@ -23,7 +23,7 @@ For each same-system R-L pair we compute
   F_conf^(B2)(D) = −ln P_z(D; lp, Lc, k_a)                          (00.1)
 
 at the measured bound-chain vertical reach D_bound (from
-`results/closure_wlc_three_term.md`, taken straight out of the the off-site
+`results/closure_wlc_three_term.md`, taken straight out of the off-site
 chain_coords MD extracts). Then we form the cross-system pair table
 
   ΔΔF_conf^(B2)(A − B) = F^(B2)_A(D_A) − F^(B2)_B(D_B)              (00.2)

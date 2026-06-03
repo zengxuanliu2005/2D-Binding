@@ -1,0 +1,643 @@
+=== run_full_analysis.sh — start 2026-06-03T10:45:37+08:00 ===
+BUNDLE_ROOT=/mnt/nfs/ugstu/liuzx/2D-Binding/cluster  MD_PARENT=/path/to/your/MD/data/root  N_JOBS=8  PILOT=--pilot
+
+--- inventory ---
+  WARN: /path/to/your/MD/data/root/15_120x120_K100_EPS05 not found, skipping
+  WARN: /path/to/your/MD/data/root/15_120x120_K10_EPS05 not found, skipping
+  WARN: /path/to/your/MD/data/root/22_120x120_K01_EPS05 not found, skipping
+
+--- extract (8 workers in parallel) ---
+  0 replicas to extract
+
+--- merge per-system ---
+
+╔════════════════════════════════════════════════════════════════════╗
+║  cluster/scripts/merge_chain_coords.py                            ║
+║  Concatenate per-replica npz into one full-data npz per system    ║
+╚════════════════════════════════════════════════════════════════════╝
+
+PURPOSE
+─────────
+Walks <input-root>/<system>/<replica>/chain_coords.npz for every system
++ replica, concatenates along the frame axis, and writes one merged npz
+per system to <output-root>/<system>/chain_coords.npz.
+
+▶  config: n_systems=3, n_jobs=3, pilot=True
+   input-root  : /mnt/nfs/ugstu/liuzx/2D-Binding/cluster/outputs/extracted
+   output-root : /mnt/nfs/ugstu/liuzx/2D-Binding/cluster/outputs/chain_coords
+
+
+=== summary ===
+  SKIP  15_120x120_K100_EPS05: no s### subdirs in /mnt/nfs/ugstu/liuzx/2D-Binding/cluster/outputs/extracted/15_120x120_K100_EPS05
+  SKIP  15_120x120_K10_EPS05: no s### subdirs in /mnt/nfs/ugstu/liuzx/2D-Binding/cluster/outputs/extracted/15_120x120_K10_EPS05
+  SKIP  22_120x120_K01_EPS05: no s### subdirs in /mnt/nfs/ugstu/liuzx/2D-Binding/cluster/outputs/extracted/22_120x120_K01_EPS05
+
+--- closure_four_term (S1-S23 four-term) ---
+
+╔════════════════════════════════════════════════════════════════════╗
+║  closure_four_term.py — S1-S23 four-term ΔF decomposition         ║
+╚════════════════════════════════════════════════════════════════════╝
+
+PURPOSE
+─────────
+Computes the per-system free-energy decomposition
+
+    ΔF = F_trans + F_conf + F_bond + F_rot
+
+per the S1-S23 framework, using chain_coords.npz inputs from
+system_inputs.py and formulas from free_energy_terms.py. Then for each
+of the three pair comparisons (flex−rigid, semi−rigid, semi−flex)
+computes ΔΔF_term and ΔΔF_sum, and compares against the target ΔΔF.
+
+With --bootstrap, resamples frames per system independently and reports
+mean ± σ for every ΔΔF term. Use --n-jobs 8 for parallel.
+
+Traceback (most recent call last):
+  File "/mnt/nfs/ugstu/liuzx/2D-Binding/cluster/scripts/closure_four_term.py", line 367, in <module>
+    main()
+  File "/mnt/nfs/ugstu/liuzx/2D-Binding/cluster/scripts/closure_four_term.py", line 214, in main
+    inputs = load_all()
+             ^^^^^^^^^^
+  File "/mnt/nfs/ugstu/liuzx/2D-Binding/cluster/scripts/system_inputs.py", line 189, in load_all
+    out[label] = load_system(npz, label, sys_name)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/nfs/ugstu/liuzx/2D-Binding/cluster/scripts/system_inputs.py", line 149, in load_system
+    raw = load_raw(npz_path)
+          ^^^^^^^^^^^^^^^^^^
+  File "/mnt/nfs/ugstu/liuzx/2D-Binding/cluster/scripts/system_inputs.py", line 137, in load_raw
+    d = np.load(npz_path)
+        ^^^^^^^^^^^^^^^^^
+  File "/opt/miniconda3/lib/python3.11/site-packages/numpy/lib/npyio.py", line 427, in load
+    fid = stack.enter_context(open(os_fspath(file), "rb"))
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/mnt/nfs/ugstu/liuzx/2D-Binding/cluster/outputs/chain_coords/15_120x120_K100_EPS05/chain_coords.npz'
+WARN: closure_four_term failed
+
+--- closure_wlc_three_term (3-term WLC) ---
+
+╔════════════════════════════════════════════════════════════════════╗
+║  closure_wlc_three_term.py — trans + rot + Marko-Siggia WLC       ║
+╚════════════════════════════════════════════════════════════════════╝
+
+PURPOSE
+─────────
+The the source PPT slide 25 three-term closure — drops the S17 end-volume
+term and replaces the Gaussian S4 conformational term with the
+Marko-Siggia integrated WLC stretching free energy.
+
+Parameters
+  L_c  : nominal ecto contour (default 12 nm = 12 protein bonds × 1.0 σ)
+  l_p  : persistence length from xi_rl_candidates.LP_PHD (84.6, 8.18, 1.14 nm)
+  D    : bound-chain z-reach from system_inputs.D_bound
+
+With --bootstrap, resamples frames per system and reports σ on each
+ΔΔF term. Use --n-jobs 8 for parallel.
+
+Traceback (most recent call last):
+  File "/mnt/nfs/ugstu/liuzx/2D-Binding/cluster/scripts/closure_wlc_three_term.py", line 355, in <module>
+    main()
+  File "/mnt/nfs/ugstu/liuzx/2D-Binding/cluster/scripts/closure_wlc_three_term.py", line 224, in main
+    inputs = load_all()
+             ^^^^^^^^^^
+  File "/mnt/nfs/ugstu/liuzx/2D-Binding/cluster/scripts/system_inputs.py", line 189, in load_all
+    out[label] = load_system(npz, label, sys_name)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/nfs/ugstu/liuzx/2D-Binding/cluster/scripts/system_inputs.py", line 149, in load_system
+    raw = load_raw(npz_path)
+          ^^^^^^^^^^^^^^^^^^
+  File "/mnt/nfs/ugstu/liuzx/2D-Binding/cluster/scripts/system_inputs.py", line 137, in load_raw
+    d = np.load(npz_path)
+        ^^^^^^^^^^^^^^^^^
+  File "/opt/miniconda3/lib/python3.11/site-packages/numpy/lib/npyio.py", line 427, in load
+    fid = stack.enter_context(open(os_fspath(file), "rb"))
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/mnt/nfs/ugstu/liuzx/2D-Binding/cluster/outputs/chain_coords/15_120x120_K100_EPS05/chain_coords.npz'
+WARN: closure_wlc_three_term failed
+
+--- raw_tether_partition (absolute K2D) ---
+
+╔════════════════════════════════════════════════════════════════════╗
+║  raw_tether_partition_k2d.py — ab initio K2D from MD              ║
+╚════════════════════════════════════════════════════════════════════╝
+
+PURPOSE
+─────────
+Reads outputs/<system>/s001/traj.xyz directly and integrates the
+soft-Boltzmann binding kernel over the lateral R-L bond-vector disk
+for each trial membrane separation h. Outputs:
+
+    K2D_eff(h) = (1/N_pairs) · Σ π·r_xy_max² · ⟨exp(-U_eff/kBT) - 1⟩
+    K2D,max    = max over h
+    ΔΔF(pair)  = -ln(K2D,a / K2D,b)
+
+No fitting to (ξ⊥, K2D) data — this is the ab initio prediction.
+
+With --bootstrap, resamples frames per system (each independently) and
+reports σ on K2D,max + ΔΔF. Use --n-jobs 8 for parallel.
+Use --systems rigid (or comma-list) to run only a subset.
+
+[rigid] extracting raw unbound features from outputs/15_120x120_K100_EPS05/s001
+Traceback (most recent call last):
+  File "/mnt/nfs/ugstu/liuzx/2D-Binding/cluster/scripts/raw_tether_partition_k2d.py", line 657, in <module>
+    raise SystemExit(main(sys.argv))
+                     ^^^^^^^^^^^^^^
+  File "/mnt/nfs/ugstu/liuzx/2D-Binding/cluster/scripts/raw_tether_partition_k2d.py", line 570, in main
+    feat = extract_raw_unbound_features(sys_dir, label)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/nfs/ugstu/liuzx/2D-Binding/cluster/scripts/raw_tether_partition_k2d.py", line 110, in extract_raw_unbound_features
+    topo = build_topology(sys_dir / "mol.psf")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/nfs/ugstu/liuzx/2D-Binding/cluster/scripts/topology.py", line 159, in build_topology
+    n_atoms, bonds = parse_psf(psf_path)
+                     ^^^^^^^^^^^^^^^^^^^
+  File "/mnt/nfs/ugstu/liuzx/2D-Binding/cluster/scripts/topology.py", line 87, in parse_psf
+    with open(psf_path) as f:
+         ^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/mnt/nfs/ugstu/liuzx/2D-Binding/cluster/outputs/15_120x120_K100_EPS05/s001/mol.psf'
+WARN: raw_tether_partition failed
+
+--- diagnose bound vs unbound bias ---
+WARN: diagnose failed
+
+--- reconcile methods (5-method consensus) ---
+
+╔════════════════════════════════════════════════════════════════════╗
+║  reconcile_methods.py — five-method ΔΔF consensus                 ║
+╚════════════════════════════════════════════════════════════════════╝
+
+PURPOSE
+─────────
+Compares five independent ΔΔF estimates:
+
+  1. Target — Hu master-curve K2D,max ratios (from the source PPT)
+  2. PhD PPT s25 — trans + rot + conf-WLC, her published values
+  3. Four-term decomposition (S1-S23) — local closure_four_term.py
+  4. Raw partition — bootstrap from raw_tether_partition_k2d.py
+  5. WLC three-term reimpl — local closure_wlc_three_term.py
+
+Reports pairwise gaps, z-scores against bootstrap σ, and an
+inverse-variance weighted consensus. Saves figure + markdown table.
+
+======================================================================
+Q2: Method reconciliation — ΔΔF consensus
+======================================================================
+
+--- Method ΔΔF values ---
+Method                    flex-rigid semi-rigid  semi-flex
+-------------------------------------------------------
+Target (Hu fit)               +3.560     +2.680     -0.900
+PhD PPT s25                   +3.640     +2.470     -1.180
+Four-term decomposition (S1-S23)     +3.960     +2.690     -1.270
+Raw partition                 +3.324     +2.409     -0.915
+s25 reimpl                    +5.231     +2.053     -3.178
+
+--- Pairwise method gaps (kBT) ---
+
+  flex-rigid:
+    Target (Hu fit)        vs PhD PPT s25           : 0.080
+    Target (Hu fit)        vs Four-term decomposition (S1-S23): 0.400
+    Target (Hu fit)        vs Raw partition         : 0.236
+    Target (Hu fit)        vs s25 reimpl            : 1.671
+    PhD PPT s25            vs Four-term decomposition (S1-S23): 0.320
+    PhD PPT s25            vs Raw partition         : 0.316
+    PhD PPT s25            vs s25 reimpl            : 1.591
+    Four-term decomposition (S1-S23) vs Raw partition         : 0.636
+    Four-term decomposition (S1-S23) vs s25 reimpl            : 1.271
+    Raw partition          vs s25 reimpl            : 1.907
+
+  semi-rigid:
+    Target (Hu fit)        vs PhD PPT s25           : 0.210
+    Target (Hu fit)        vs Four-term decomposition (S1-S23): 0.010
+    Target (Hu fit)        vs Raw partition         : 0.271
+    Target (Hu fit)        vs s25 reimpl            : 0.627
+    PhD PPT s25            vs Four-term decomposition (S1-S23): 0.220
+    PhD PPT s25            vs Raw partition         : 0.061
+    PhD PPT s25            vs s25 reimpl            : 0.417
+    Four-term decomposition (S1-S23) vs Raw partition         : 0.281
+    Four-term decomposition (S1-S23) vs s25 reimpl            : 0.637
+    Raw partition          vs s25 reimpl            : 0.356
+
+  semi-flex:
+    Target (Hu fit)        vs PhD PPT s25           : 0.280
+    Target (Hu fit)        vs Four-term decomposition (S1-S23): 0.370
+    Target (Hu fit)        vs Raw partition         : 0.015
+    Target (Hu fit)        vs s25 reimpl            : 2.278
+    PhD PPT s25            vs Four-term decomposition (S1-S23): 0.090
+    PhD PPT s25            vs Raw partition         : 0.265
+    PhD PPT s25            vs s25 reimpl            : 1.998
+    Four-term decomposition (S1-S23) vs Raw partition         : 0.355
+    Four-term decomposition (S1-S23) vs s25 reimpl            : 1.908
+    Raw partition          vs s25 reimpl            : 2.263
+
+--- Statistical significance ---
+(σ on target from curve_fit covariance; σ on raw partition from bootstrap)
+Pair            target σ    raw σ  max gap  z-score verdict
+------------------------------------------------------------
+flex-rigid        0.0256   0.0650    0.636     3.38  significant (z>3)
+semi-rigid        0.0192   0.0510    0.281     4.97  significant (z>3)
+semi-flex         0.0301   0.0710    0.370     0.19  statistical
+
+⚠️ Target σ from curve_fit covariance underestimates true uncertainty
+  for semi/flex (Hu master curve model assumption violated).
+  TRUE σ on target is likely 0.1-0.2 kBT based on data scatter.
+
+--- Inverse-variance weighted consensus ---
+  flex-rigid: consensus = +3.423 ± 0.051 kBT (target +3.56, gap -0.137)
+  semi-rigid: consensus = +2.465 ± 0.043 kBT (target +2.68, gap -0.215)
+  semi-flex: consensus = -0.945 ± 0.054 kBT (target -0.90, gap -0.045)
+
+Saved results/figures/method_reconciliation.png
+Saved results/method_reconciliation.md
+
+--- distill outputs ---
+  + method_reconciliation.md
+  + method_reconciliation.png
+
+=== run_full_analysis.sh DONE 2026-06-03T10:45:38+08:00 ===
+Total distilled output size:
+152K	/mnt/nfs/ugstu/liuzx/2D-Binding/cluster/outputs/distilled
+
+Distilled outputs are at:
+  /mnt/nfs/ugstu/liuzx/2D-Binding/cluster/outputs/distilled
+
+Off-site full-data collaborator: cp the distilled/ folder into
+  /mnt/nfs/ugstu/liuzx/2D-Binding/cluster/outputs/$(date -I)_round1/
+so Zengxuan can pick them up directly (no WeChat tar transfer needed).
+=== run_full_analysis.sh — start 2026-06-03T10:51:14+08:00 ===
+BUNDLE_ROOT=/mnt/nfs/ugstu/liuzx/2D-Binding/cluster  MD_PARENT=/mnt/nfs/ugstu/liuzx  N_JOBS=8  PILOT=--pilot
+
+--- inventory ---
+  15_120x120_K100_EPS05: 2 replicas total, using 2
+  15_120x120_K10_EPS05: 2 replicas total, using 2
+  22_120x120_K01_EPS05: 3 replicas total, using 2
+
+--- extract (8 workers in parallel) ---
+  6 replicas to extract
+
+╔════════════════════════════════════════════════════════════════════╗
+║  cluster/scripts/extract_parallel.py                              ║
+║  Parallel extract of chain_coords across replicas                  ║
+╚════════════════════════════════════════════════════════════════════╝
+   tasks  : 6
+   n_jobs : 8
+
+  OK    15_120x120_K100_EPS05  s001  (ok)
+  OK    15_120x120_K100_EPS05  s002  (ok)
+  OK    15_120x120_K10_EPS05  s001  (ok)
+  OK    15_120x120_K10_EPS05  s002  (ok)
+  OK    22_120x120_K01_EPS05  s001  (ok)
+  OK    22_120x120_K01_EPS05  s002  (ok)
+
+Extract: 6 ok, 0 already done, 0 failed
+
+--- merge per-system ---
+
+╔════════════════════════════════════════════════════════════════════╗
+║  cluster/scripts/merge_chain_coords.py                            ║
+║  Concatenate per-replica npz into one full-data npz per system    ║
+╚════════════════════════════════════════════════════════════════════╝
+
+PURPOSE
+─────────
+Walks <input-root>/<system>/<replica>/chain_coords.npz for every system
++ replica, concatenates along the frame axis, and writes one merged npz
+per system to <output-root>/<system>/chain_coords.npz.
+
+▶  config: n_systems=3, n_jobs=3, pilot=True
+   input-root  : /mnt/nfs/ugstu/liuzx/2D-Binding/cluster/outputs/extracted
+   output-root : /mnt/nfs/ugstu/liuzx/2D-Binding/cluster/outputs/chain_coords
+
+[15_120x120_K100_EPS05] merging 2 replicas
+[15_120x120_K10_EPS05] merging 2 replicas
+[22_120x120_K01_EPS05] merging 2 replicas
+[15_120x120_K100_EPS05] OK: 1000 frames, 3.6 MB → /mnt/nfs/ugstu/liuzx/2D-Binding/cluster/outputs/chain_coords/15_120x120_K100_EPS05/chain_coords.npz
+[15_120x120_K10_EPS05] OK: 1000 frames, 3.7 MB → /mnt/nfs/ugstu/liuzx/2D-Binding/cluster/outputs/chain_coords/15_120x120_K10_EPS05/chain_coords.npz
+[22_120x120_K01_EPS05] OK: 2000 frames, 10.6 MB → /mnt/nfs/ugstu/liuzx/2D-Binding/cluster/outputs/chain_coords/22_120x120_K01_EPS05/chain_coords.npz
+
+=== summary ===
+  15_120x120_K100_EPS05             n_replicas=  2  frames=  1000  size=  3.6 MB
+  15_120x120_K10_EPS05              n_replicas=  2  frames=  1000  size=  3.7 MB
+  22_120x120_K01_EPS05              n_replicas=  2  frames=  2000  size= 10.6 MB
+
+--- closure_four_term (S1-S23 four-term) ---
+
+╔════════════════════════════════════════════════════════════════════╗
+║  closure_four_term.py — S1-S23 four-term ΔF decomposition         ║
+╚════════════════════════════════════════════════════════════════════╝
+
+PURPOSE
+─────────
+Computes the per-system free-energy decomposition
+
+    ΔF = F_trans + F_conf + F_bond + F_rot
+
+per the S1-S23 framework, using chain_coords.npz inputs from
+system_inputs.py and formulas from free_energy_terms.py. Then for each
+of the three pair comparisons (flex−rigid, semi−rigid, semi−flex)
+computes ΔΔF_term and ΔΔF_sum, and compares against the target ΔΔF.
+
+With --bootstrap, resamples frames per system independently and reports
+mean ± σ for every ΔΔF term. Use --n-jobs 8 for parallel.
+
+=== Per-system inputs and four-term decomposition (k_B T) ===
+
+label   regime     n_b     R_e       D       L       F_t       F_c    F_bond     F_rot   ω_ratio
+rigid   2D       10.17   9.481   9.158   2.842    -7.867    +1.400    +9.575    -1.022     2.779
+semi    3D        4.41   8.444   8.148   3.852    -7.867    +1.396   +10.924    +0.299     0.742
+flex    3D        3.11   6.165   6.204   5.796    -7.484    +1.519   +11.332    +0.365     0.694
+
+=== Cross-system ΔΔF (k_B T) ===
+
+pair              ΔΔF_t      ΔΔF_c   ΔΔF_bond    ΔΔF_rot    ΔΔF_sum   target      gap   closed
+flex−rigid       +0.383     +0.120     +1.757     +1.388     +3.647    +3.56   +0.087    +102%
+semi−rigid       +0.000     -0.003     +1.349     +1.321     +2.667    +2.68   -0.013    +100%
+semi−flex        -0.383     -0.123     -0.408     -0.066     -0.981    -0.90   -0.081    +109%
+
+=== Bootstrap: 20 frame-level resamples (n_jobs=8) ===
+    bootstrap 0/20...
+    bootstrap 1/20...
+    bootstrap 2/20...
+    bootstrap 3/20...
+    bootstrap 4/20...
+    bootstrap 5/20...
+    bootstrap 6/20...
+    bootstrap 7/20...
+    bootstrap 8/20...
+    bootstrap 9/20...
+    bootstrap 10/20...
+    bootstrap 11/20...
+    bootstrap 12/20...
+    bootstrap 13/20...
+    bootstrap 14/20...
+    bootstrap 15/20...
+    bootstrap 16/20...
+    bootstrap 17/20...
+    bootstrap 18/20...
+    bootstrap 19/20...
+    bootstrap 20/20 done.
+
+=== Per-pair ΔΔF (mean ± σ) ===
+
+pair                   ΔΔF_t           ΔΔF_c        ΔΔF_bond         ΔΔF_rot         ΔΔF_sum   target
+flex−rigid     +0.383±0.000   +0.120±0.006   +1.757±0.002   +1.397±0.014   +3.657±0.013    +3.56
+semi−rigid     +0.000±0.000   -0.003±0.005   +1.349±0.003   +1.327±0.024   +2.672±0.024    +2.68
+semi−flex      -0.383±0.000   -0.123±0.008   -0.409±0.004   -0.070±0.016   -0.985±0.019    -0.90
+
+Saved results/closure_four_term.npz.
+Wrote results/closure_four_term_data.md.
+
+--- closure_wlc_three_term (3-term WLC) ---
+
+╔════════════════════════════════════════════════════════════════════╗
+║  closure_wlc_three_term.py — trans + rot + Marko-Siggia WLC       ║
+╚════════════════════════════════════════════════════════════════════╝
+
+PURPOSE
+─────────
+The the source PPT slide 25 three-term closure — drops the S17 end-volume
+term and replaces the Gaussian S4 conformational term with the
+Marko-Siggia integrated WLC stretching free energy.
+
+Parameters
+  L_c  : nominal ecto contour (default 12 nm = 12 protein bonds × 1.0 σ)
+  l_p  : persistence length from xi_rl_candidates.LP_PHD (84.6, 8.18, 1.14 nm)
+  D    : bound-chain z-reach from system_inputs.D_bound
+
+With --bootstrap, resamples frames per system and reports σ on each
+ΔΔF term. Use --n-jobs 8 for parallel.
+
+=== Closure 5: PhD PPT s25 — trans + rot + WLC conf (L_c = 12.0 nm) ===
+
+label      l_p       D     L_c       F_t     F_rot  F_conf_WLC
+rigid    84.60   9.158   12.00    -7.867    -1.022      +0.129
+semi      8.18   8.148   12.00    -7.867    +0.299      +0.865
+flex      1.14   6.204   12.00    -7.484    +0.365      +2.863
+
+=== Cross-system ΔΔF (k_B T) ===
+
+pair              ΔΔF_t    ΔΔF_rot   ΔΔF_conf    ΔΔF_sum   target      gap   closed
+flex−rigid       +0.383     +1.388     +2.735     +4.506    +3.56   +0.946    +127%
+semi−rigid       +0.000     +1.321     +0.736     +2.057    +2.68   -0.623     +77%
+semi−flex        -0.383     -0.066     -1.999     -2.448    -0.90   -1.548    +272%
+
+=== Bootstrap: 20 frame-level resamples (n_jobs=8) ===
+    bootstrap 0/20...
+    bootstrap 1/20...
+    bootstrap 2/20...
+    bootstrap 3/20...
+    bootstrap 4/20...
+    bootstrap 5/20...
+    bootstrap 6/20...
+    bootstrap 7/20...
+    bootstrap 8/20...
+    bootstrap 9/20...
+    bootstrap 10/20...
+    bootstrap 11/20...
+    bootstrap 12/20...
+    bootstrap 13/20...
+    bootstrap 14/20...
+    bootstrap 15/20...
+    bootstrap 16/20...
+    bootstrap 17/20...
+    bootstrap 18/20...
+    bootstrap 19/20...
+    bootstrap 20/20 done.
+
+=== Per-pair ΔΔF (mean ± σ) ===
+
+pair                   ΔΔF_t         ΔΔF_rot        ΔΔF_conf         ΔΔF_sum   target
+flex−rigid     +0.383±0.000   +1.397±0.014   +2.735±0.012   +4.516±0.015    +3.56
+semi−rigid     +0.000±0.000   +1.327±0.024   +0.737±0.004   +2.064±0.024    +2.68
+semi−flex      -0.383±0.000   -0.070±0.016   -1.999±0.013   -2.452±0.025    -0.90
+
+Saved results/closure_wlc_three_term.npz.
+Wrote results/closure_wlc_three_term.md.
+
+--- raw_tether_partition (absolute K2D) ---
+
+╔════════════════════════════════════════════════════════════════════╗
+║  raw_tether_partition_k2d.py — ab initio K2D from MD              ║
+╚════════════════════════════════════════════════════════════════════╝
+
+PURPOSE
+─────────
+Reads outputs/<system>/s001/traj.xyz directly and integrates the
+soft-Boltzmann binding kernel over the lateral R-L bond-vector disk
+for each trial membrane separation h. Outputs:
+
+    K2D_eff(h) = (1/N_pairs) · Σ π·r_xy_max² · ⟨exp(-U_eff/kBT) - 1⟩
+    K2D,max    = max over h
+    ΔΔF(pair)  = -ln(K2D,a / K2D,b)
+
+No fitting to (ξ⊥, K2D) data — this is the ab initio prediction.
+
+With --bootstrap, resamples frames per system (each independently) and
+reports σ on K2D,max + ΔΔF. Use --n-jobs 8 for parallel.
+Use --systems rigid (or comma-list) to run only a subset.
+
+[rigid] extracting raw unbound features from outputs/15_120x120_K100_EPS05/s001
+  unbound samples: R=2360 L=2360 (per-frame avg: R=4.7 L=4.7)
+  estimating area curve over 91 h values
+  soft max=9893.86 at h=19.60; hard max=0.0190262 at h=19.60
+  bootstrap: 20 frame-level resamples
+    bootstrap 0/20...
+    bootstrap 5/20...
+    bootstrap 10/20...
+    bootstrap 15/20...
+    bootstrap 20/20 done.
+  soft boot: mean=9958.54 sigma=171.82
+  hard boot: mean=0.0194108 sigma=0.000393384
+[semi] extracting raw unbound features from outputs/15_120x120_K10_EPS05/s001
+  unbound samples: R=5541 L=5541 (per-frame avg: R=11.1 L=11.1)
+  estimating area curve over 91 h values
+  soft max=845.801 at h=17.60; hard max=0.00165608 at h=17.60
+  bootstrap: 20 frame-level resamples
+    bootstrap 0/20...
+    bootstrap 5/20...
+    bootstrap 10/20...
+    bootstrap 15/20...
+    bootstrap 20/20 done.
+  soft boot: mean=882.153 sigma=32.1845
+  hard boot: mean=0.00169127 sigma=3.89602e-05
+[flex] extracting raw unbound features from outputs/22_120x120_K01_EPS05/s001
+  unbound samples: R=20165 L=20165 (per-frame avg: R=20.2 L=20.2)
+  estimating area curve over 91 h values
+  soft max=376.62 at h=12.00; hard max=0.000659636 at h=11.00
+  bootstrap: 20 frame-level resamples
+    bootstrap 0/20...
+    bootstrap 5/20...
+    bootstrap 10/20...
+    bootstrap 15/20...
+    bootstrap 20/20 done.
+  soft boot: mean=356.536 sigma=19.821
+  hard boot: mean=0.000644734 sigma=2.49729e-05
+
+=== Soft-kernel closure ===
+flex-rigid  pred=+3.268 target=+3.56 gap=-0.292
+semi-rigid  pred=+2.459 target=+2.68 gap=-0.221
+semi-flex   pred=-0.809 target=-0.90 gap=+0.091
+
+=== Bootstrap closure (mean ± σ) ===
+flex-rigid  pred=+3.331 ± 0.061 target=+3.56
+semi-rigid  pred=+2.424 ± 0.037 target=+2.68
+semi-flex   pred=-0.907 ± 0.078 target=-0.90
+
+=== Per-system soft area (bootstrap mean ± σ) ===
+rigid       soft_area=9958.54 ± 171.82 (point=9893.86)
+semi        soft_area=882.153 ± 32.1845 (point=845.801)
+flex        soft_area=356.536 ± 19.821 (point=376.62)
+
+Saved results/raw_tether_partition.npz and results/raw_tether_partition.md
+
+--- diagnose bound vs unbound bias ---
+
+--- reconcile methods (5-method consensus) ---
+
+╔════════════════════════════════════════════════════════════════════╗
+║  reconcile_methods.py — five-method ΔΔF consensus                 ║
+╚════════════════════════════════════════════════════════════════════╝
+
+PURPOSE
+─────────
+Compares five independent ΔΔF estimates:
+
+  1. Target — Hu master-curve K2D,max ratios (from the source PPT)
+  2. PhD PPT s25 — trans + rot + conf-WLC, her published values
+  3. Four-term decomposition (S1-S23) — local closure_four_term.py
+  4. Raw partition — bootstrap from raw_tether_partition_k2d.py
+  5. WLC three-term reimpl — local closure_wlc_three_term.py
+
+Reports pairwise gaps, z-scores against bootstrap σ, and an
+inverse-variance weighted consensus. Saves figure + markdown table.
+
+======================================================================
+Q2: Method reconciliation — ΔΔF consensus
+======================================================================
+
+--- Method ΔΔF values ---
+Method                    flex-rigid semi-rigid  semi-flex
+-------------------------------------------------------
+Target (Hu fit)               +3.560     +2.680     -0.900
+PhD PPT s25                   +3.640     +2.470     -1.180
+Four-term decomposition (S1-S23)     +3.960     +2.690     -1.270
+Raw partition                 +3.324     +2.409     -0.915
+s25 reimpl                    +5.231     +2.053     -3.178
+
+--- Pairwise method gaps (kBT) ---
+
+  flex-rigid:
+    Target (Hu fit)        vs PhD PPT s25           : 0.080
+    Target (Hu fit)        vs Four-term decomposition (S1-S23): 0.400
+    Target (Hu fit)        vs Raw partition         : 0.236
+    Target (Hu fit)        vs s25 reimpl            : 1.671
+    PhD PPT s25            vs Four-term decomposition (S1-S23): 0.320
+    PhD PPT s25            vs Raw partition         : 0.316
+    PhD PPT s25            vs s25 reimpl            : 1.591
+    Four-term decomposition (S1-S23) vs Raw partition         : 0.636
+    Four-term decomposition (S1-S23) vs s25 reimpl            : 1.271
+    Raw partition          vs s25 reimpl            : 1.907
+
+  semi-rigid:
+    Target (Hu fit)        vs PhD PPT s25           : 0.210
+    Target (Hu fit)        vs Four-term decomposition (S1-S23): 0.010
+    Target (Hu fit)        vs Raw partition         : 0.271
+    Target (Hu fit)        vs s25 reimpl            : 0.627
+    PhD PPT s25            vs Four-term decomposition (S1-S23): 0.220
+    PhD PPT s25            vs Raw partition         : 0.061
+    PhD PPT s25            vs s25 reimpl            : 0.417
+    Four-term decomposition (S1-S23) vs Raw partition         : 0.281
+    Four-term decomposition (S1-S23) vs s25 reimpl            : 0.637
+    Raw partition          vs s25 reimpl            : 0.356
+
+  semi-flex:
+    Target (Hu fit)        vs PhD PPT s25           : 0.280
+    Target (Hu fit)        vs Four-term decomposition (S1-S23): 0.370
+    Target (Hu fit)        vs Raw partition         : 0.015
+    Target (Hu fit)        vs s25 reimpl            : 2.278
+    PhD PPT s25            vs Four-term decomposition (S1-S23): 0.090
+    PhD PPT s25            vs Raw partition         : 0.265
+    PhD PPT s25            vs s25 reimpl            : 1.998
+    Four-term decomposition (S1-S23) vs Raw partition         : 0.355
+    Four-term decomposition (S1-S23) vs s25 reimpl            : 1.908
+    Raw partition          vs s25 reimpl            : 2.263
+
+--- Statistical significance ---
+(σ on target from curve_fit covariance; σ on raw partition from bootstrap)
+Pair            target σ    raw σ  max gap  z-score verdict
+------------------------------------------------------------
+flex-rigid        0.0256   0.0650    0.636     3.38  significant (z>3)
+semi-rigid        0.0192   0.0510    0.281     4.97  significant (z>3)
+semi-flex         0.0301   0.0710    0.370     0.19  statistical
+
+⚠️ Target σ from curve_fit covariance underestimates true uncertainty
+  for semi/flex (Hu master curve model assumption violated).
+  TRUE σ on target is likely 0.1-0.2 kBT based on data scatter.
+
+--- Inverse-variance weighted consensus ---
+  flex-rigid: consensus = +3.423 ± 0.051 kBT (target +3.56, gap -0.137)
+  semi-rigid: consensus = +2.465 ± 0.043 kBT (target +2.68, gap -0.215)
+  semi-flex: consensus = -0.945 ± 0.054 kBT (target -0.90, gap -0.045)
+
+Saved results/figures/method_reconciliation.png
+Saved results/method_reconciliation.md
+
+--- distill outputs ---
+  + closure_four_term.npz
+  + closure_four_term_data.md
+  + closure_wlc_three_term.npz
+  + closure_wlc_three_term.md
+  + raw_tether_partition.npz
+  + raw_tether_partition.md
+  + method_reconciliation.md
+  + method_reconciliation.png
+
+=== run_full_analysis.sh DONE 2026-06-03T11:13:42+08:00 ===
+Total distilled output size:
+256K	/mnt/nfs/ugstu/liuzx/2D-Binding/cluster/outputs/distilled
+
+Distilled outputs are at:
+  /mnt/nfs/ugstu/liuzx/2D-Binding/cluster/outputs/distilled
+
+Off-site full-data collaborator: cp the distilled/ folder into
+  /mnt/nfs/ugstu/liuzx/2D-Binding/cluster/outputs/$(date -I)_round1/
+so Zengxuan can pick them up directly (no WeChat tar transfer needed).

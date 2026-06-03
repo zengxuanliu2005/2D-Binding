@@ -49,7 +49,7 @@ construction. The ratio test exposes the lp signature.
   for the three contributing factors; the residual factors transfer to
   this step unchanged).
 - It does NOT use Hu's master curve P(l) for the membrane separation
-  distribution. The the off-site Weikl-2016 convolution
+  distribution. The off-site Weikl-2016 convolution
   `K2D(ξ⊥) = ∫ K2D(l) P(l) dl` introduces a system-dependent σ_p (width
   of P(l)) that we do not model here. So our ξ_RL prediction equals
   σ_K2D from K2D(l), not σ_K2D ⊕ σ_p. The ratio test is robust to this

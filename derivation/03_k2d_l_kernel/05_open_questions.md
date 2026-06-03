@@ -53,7 +53,7 @@ naïvely be a monotone ordering.
     Requires modifying the WLC MC sampler in derivation/01 — significant.
 3. Use the existing truncation but document that the σ_K2D measured here
     is the **truncation-conditional** σ_K2D, which captures the same
-    physics as the the measured K2D(l) from her constrained-h MD
+    physics as the measured K2D(l) from constrained-h MD
     (where the chain also cannot pass through).
 
 Pragmatic choice: option 3 + clear documentation. The measured ξ_RL

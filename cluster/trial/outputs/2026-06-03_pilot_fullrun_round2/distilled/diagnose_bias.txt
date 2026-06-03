@@ -1,0 +1,41 @@
+
+╔════════════════════════════════════════════════════════════════════╗
+║  diagnose_bound_vs_unbound.py                                     ║
+║  Bound vs unbound R-chain geometry per system                     ║
+╚════════════════════════════════════════════════════════════════════╝
+
+PURPOSE
+─────────
+Splits R chains by per-frame bound state and reports mean / std of
+binding-bead z-reach and chain-axis tilt for each population. Used to
+diagnose whether the equilibrium MD sampling has a geometric bias
+between bound and unbound configurations.
+
+Interpretation
+  Δz > 0   : bound chains stand more upright than unbound (expected
+              for narrow K2D(l) systems; large Δz hints at a sampling
+              bias that the raw-tether partition will inherit)
+  Δtilt > 0 : bound chains tilt less than unbound
+
+A1 finding (s001 only): rigid Δz=−0.26 nm, Δtilt=+7°; flex Δz=−1.48 nm,
+Δtilt=+14°. Re-run with the the off-site full-data run should shrink these
+toward statistical noise IF the "data volume" hypothesis is right.
+
+
+>>> Extracting rigid (15_120x120_K100_EPS05) ...
+Traceback (most recent call last):
+  File "/mnt/nfs/ugstu/liuzx/2D-Binding/cluster/scripts/diagnose_bound_vs_unbound.py", line 168, in <module>
+    main()
+  File "/mnt/nfs/ugstu/liuzx/2D-Binding/cluster/scripts/diagnose_bound_vs_unbound.py", line 163, in main
+    data = extract_split(sys_dir)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/nfs/ugstu/liuzx/2D-Binding/cluster/scripts/diagnose_bound_vs_unbound.py", line 47, in extract_split
+    topo = build_topology(sys_dir / "mol.psf")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/nfs/ugstu/liuzx/2D-Binding/cluster/scripts/topology.py", line 159, in build_topology
+    n_atoms, bonds = parse_psf(psf_path)
+                     ^^^^^^^^^^^^^^^^^^^
+  File "/mnt/nfs/ugstu/liuzx/2D-Binding/cluster/scripts/topology.py", line 87, in parse_psf
+    with open(psf_path) as f:
+         ^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/mnt/nfs/ugstu/liuzx/2D-Binding/cluster/outputs/15_120x120_K100_EPS05/s001/mol.psf'

@@ -18,7 +18,7 @@ agent_read_when:
 
 ## Q1 — Ecto vs full chain Lc disagreement with the source PPT Re
 
-**Symptom**. MC √⟨R²⟩ undershoots the the source PPT slide-16 Re by 17–21 %
+**Symptom**. MC √⟨R²⟩ undershoots the source PPT slide-16 Re by 17–21 %
 for rigid and semi (table 3.3). Repeating MC with Lc = 25 nm (full chain)
 overshoots for rigid/semi. Neither convention matches her published Re
 exactly.
@@ -35,7 +35,7 @@ position and an off-target ξ_RL prediction in derivation/04.
   `DEFAULT_LC_NM`).
 
 Until resolved, downstream derivations (02, 03, 04) use Lc = 12 nm to
-match the the off-site S1-S23 framework documented in CLAUDE.md.
+match the off-site S1-S23 framework documented in CLAUDE.md.
 
 ## Q2 — Bond stretching of HARM bonds
 

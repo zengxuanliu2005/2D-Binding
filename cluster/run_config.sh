@@ -18,10 +18,18 @@
 #       send distilled.tgz back to Zengxuan
 ###############################################################################
 
-# ─── Required: where your MD data lives ──────────────────────────────────────
-# Parent directory containing the 3 system folders. Use an absolute path.
-# Example: if your data is at /scratch/jane/MD/15_120x120_K100_EPS05/s001/...
-# then MD_PARENT="/scratch/jane/MD"
+# ─── MD data location ────────────────────────────────────────────────────────
+# Parent directory containing the 3 system folders (15_120x120_K100_EPS05/ etc.)
+#
+# AUTO-DETECT: if you leave the default below unchanged, run_analysis.sh /
+# full_analysis.slurm will probe $BUNDLE_ROOT/../.. (and $BUNDLE_ROOT/..,
+# $HOME) for any of the SYSTEMS_DIRS and use the first one that matches.
+# This means if your bundle lives at <md_root>/2D-Binding/cluster/ with the
+# per-system data dirs at <md_root>/<system>/, you do NOT need to edit this
+# field — auto-detect handles it.
+#
+# Set MD_PARENT explicitly only if your layout differs. Example:
+#   MD_PARENT="/scratch/jane/MD"   (data at /scratch/jane/MD/15_120x120_K100_EPS05/...)
 MD_PARENT="${MD_PARENT:-/path/to/your/MD/data/root}"
 
 # ─── Required: system directory names ────────────────────────────────────────

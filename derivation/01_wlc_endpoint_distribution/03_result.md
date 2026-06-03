@@ -67,7 +67,7 @@ across all three lp values is the main acceptance result for B2.1 (criterion
 
 ## Self-consistency check (3.3) — MC √⟨R²⟩ vs measured Re
 
-The the source PPT slide 16 lists "Re,unbound" for the full-complex chains
+The source PPT slide 16 lists "Re,unbound" for the full-complex chains
 (transmembrane + ecto): 14.76 / 11.65 / 5.66 nm for rigid / semi / flex.
 
 | label | √⟨R²⟩_MC (nm) | Re_PPT (nm) | %diff |

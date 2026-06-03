@@ -49,8 +49,9 @@ system, then runs:
   4. diagnose_bound_vs_unbound.py      (bound vs unbound geometry)
   5. reconcile_methods.py               (5-method ΔΔF consensus)
 
-All outputs go to distilled/ (≈ 5 MB total). Send distilled/ back via
-WeChat / email to Zengxuan.
+All outputs go to distilled/ (≈ 5 MB total). cp distilled/ to
+/mnt/nfs/ugstu/liuzx/2D-Binding/cluster/outputs/<date>_round1/ so
+Zengxuan can pick it up directly.
 
 BAN
 
@@ -79,6 +80,41 @@ if [[ "${1:-}" == "--pilot" ]]; then
     echo "[PILOT] Pilot mode: 2 replicas per system, n_bootstrap=$N_BOOTSTRAP"
 fi
 
+# Auto-detect MD_PARENT when the config has the placeholder default or points to
+# a nonexistent path. Common conventions: the bundle lives at
+# <md_root>/2D-Binding/cluster/ so <md_root> = $BUNDLE_ROOT/../.., which holds
+# the per-system data dirs side-by-side with 2D-Binding/. This means the
+# off-site collaborator does NOT have to edit run_config.sh as long as the
+# layout matches that convention.
+_md_layout_ok() {
+    # Returns 0 if AT LEAST ONE expected system dir exists under the candidate.
+    local cand="$1"
+    [[ -d "$cand" ]] || return 1
+    for s in "${SYSTEMS_DIRS[@]}"; do
+        [[ -d "$cand/$s" ]] && return 0
+    done
+    return 1
+}
+if ! _md_layout_ok "$MD_PARENT"; then
+    echo "[MD_PARENT] '$MD_PARENT' has no expected system dirs — auto-detecting..."
+    for cand in "$BUNDLE_ROOT/../.." "$BUNDLE_ROOT/.." "$HOME"; do
+        cand="$(cd "$cand" 2>/dev/null && pwd)" || continue
+        if _md_layout_ok "$cand"; then
+            MD_PARENT="$cand"
+            echo "[MD_PARENT] auto-detected: $MD_PARENT"
+            break
+        fi
+    done
+fi
+
+# Final validation — fail fast if MD data still isn't reachable
+if ! _md_layout_ok "$MD_PARENT"; then
+    echo "ERROR: MD_PARENT='$MD_PARENT' does not contain any of: ${SYSTEMS_DIRS[*]}"
+    echo "       Edit cluster/run_config.sh to set MD_PARENT, or place the bundle"
+    echo "       at <md_root>/2D-Binding/cluster/ so auto-detect can find it."
+    exit 5
+fi
+
 # Setup — work dirs under cluster/outputs/ per ADR 005 double-loop convention
 EXTRACTED_DIR="$BUNDLE_ROOT/outputs/extracted"
 MERGED_DIR="$BUNDLE_ROOT/outputs/chain_coords"
@@ -86,12 +122,19 @@ DISTILLED="$BUNDLE_ROOT/outputs/distilled"
 LOG="$DISTILLED/run_log.txt"
 mkdir -p "$EXTRACTED_DIR" "$MERGED_DIR" "$DISTILLED"
 
-# raw_tether_partition_k2d and diagnose_bound_vs_unbound read raw traj.xyz
-# directly from `<bundle_root>/outputs/<system>/s001/` — point that at the
-# real MD parent dir so they find the off-site first-replica data.
-if [[ ! -e "$BUNDLE_ROOT/outputs/md_root" ]]; then
-    ln -s "$(cd "$MD_PARENT" && pwd)" "$BUNDLE_ROOT/outputs/md_root"
-fi
+# raw_tether_partition_k2d.py reads `<bundle_root>/outputs/<system>/s001/traj.xyz`
+# directly. Create per-system symlinks pointing at $MD_PARENT/<system>/ so the
+# script resolves to the real MD data. (One symlink per system; we cannot
+# symlink cluster/outputs itself because it also holds extracted/chain_coords/
+# distilled/ written by this script.)
+MD_PARENT_ABS="$(cd "$MD_PARENT" && pwd)"
+for SYS in "${SYSTEMS_DIRS[@]}"; do
+    if [[ -d "$MD_PARENT_ABS/$SYS" ]]; then
+        # -sfn overwrites a stale/broken symlink from a previous run; -n prevents
+        # the unwanted "create new symlink INSIDE an existing dir" behaviour.
+        ln -sfn "$MD_PARENT_ABS/$SYS" "$BUNDLE_ROOT/outputs/$SYS"
+    fi
+done
 
 # Tee everything to log
 exec > >(tee -a "$LOG") 2>&1
@@ -214,5 +257,9 @@ echo "=== run_full_analysis.sh DONE $(date -Iseconds) ==="
 echo "Total distilled output size:"
 du -sh "$DISTILLED"
 echo
-echo "Please zip distilled/ and send back to Zengxuan:"
-echo "  tar czf distilled_for_zengxuan.tgz distilled/"
+echo "Distilled outputs are at:"
+echo "  $DISTILLED"
+echo
+echo "Off-site full-data collaborator: cp the distilled/ folder into"
+echo "  /mnt/nfs/ugstu/liuzx/2D-Binding/cluster/outputs/\$(date -I)_round1/"
+echo "so Zengxuan can pick them up directly (no WeChat tar transfer needed)."

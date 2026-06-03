@@ -1,0 +1,65 @@
+
+╔════════════════════════════════════════════════════════════════════╗
+║  diagnose_bound_vs_unbound.py                                     ║
+║  Bound vs unbound R-chain geometry per system                     ║
+╚════════════════════════════════════════════════════════════════════╝
+
+PURPOSE
+─────────
+Splits R chains by per-frame bound state and reports mean / std of
+binding-bead z-reach and chain-axis tilt for each population. Used to
+diagnose whether the equilibrium MD sampling has a geometric bias
+between bound and unbound configurations.
+
+Interpretation
+  Δz > 0   : bound chains stand more upright than unbound (expected
+              for narrow K2D(l) systems; large Δz hints at a sampling
+              bias that the raw-tether partition will inherit)
+  Δtilt > 0 : bound chains tilt less than unbound
+
+A1 finding (s001 only): rigid Δz=−0.26 nm, Δtilt=+7°; flex Δz=−1.48 nm,
+Δtilt=+14°. Re-run with the the off-site full-data run should shrink these
+toward statistical noise IF the "data volume" hypothesis is right.
+
+
+>>> Extracting rigid (15_120x120_K100_EPS05) ...
+
+=== rigid ===
+bound    (n=5140):
+  |R_end|       mean=9.511  std=0.209
+  R_end_z       mean=9.162  std=0.379  range=[7.19, 10.20]
+  |R_end_xy|    mean=2.270  std=1.126
+  term tilt deg mean=17.93  std=9.09  (from chain axis +z)
+unbound  (n=2360):
+  |R_end|       mean=9.481  std=0.220
+  R_end_z       mean=8.902  std=0.617  range=[5.41, 10.09]
+  |R_end_xy|    mean=2.889  std=1.403
+  term tilt deg mean=24.94  std=13.02  (from chain axis +z)
+
+>>> Extracting semi (15_120x120_K10_EPS05) ...
+
+=== semi ===
+bound    (n=1959):
+  |R_end|       mean=8.750  std=0.470
+  R_end_z       mean=7.945  std=0.871  range=[3.07, 9.82]
+  |R_end_xy|    mean=3.294  std=1.433
+  term tilt deg mean=41.11  std=18.48  (from chain axis +z)
+unbound  (n=5541):
+  |R_end|       mean=8.451  std=0.735
+  R_end_z       mean=7.258  std=1.468  range=[1.19, 9.93]
+  |R_end_xy|    mean=3.814  std=1.602
+  term tilt deg mean=52.47  std=22.47  (from chain axis +z)
+
+>>> Extracting flex (22_120x120_K01_EPS05) ...
+
+=== flex ===
+bound    (n=1835):
+  |R_end|       mean=7.236  std=0.882
+  R_end_z       mean=6.629  std=1.051  range=[2.79, 9.06]
+  |R_end_xy|    mean=2.587  std=1.185
+  term tilt deg mean=44.01  std=20.45  (from chain axis +z)
+unbound  (n=20165):
+  |R_end|       mean=6.157  std=1.133
+  R_end_z       mean=5.146  std=1.373  range=[0.76, 9.02]
+  |R_end_xy|    mean=3.021  std=1.306
+  term tilt deg mean=58.22  std=21.31  (from chain axis +z)

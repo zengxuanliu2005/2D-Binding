@@ -154,11 +154,38 @@ def load_system(npz_path: Path, label: str, sys_name: str) -> SystemInputs:
     )
 
 
+def _chain_coords_npz(root: Path, sys_name: str) -> Path:
+    """Resolve chain_coords.npz path with env override + dual-convention fallback.
+
+    Honors CHAIN_COORDS_ROOT env var if set. Else tries:
+      1. <root>/outputs/chain_coords/<sys>/chain_coords.npz  (cluster convention,
+         used by cluster/run_analysis.sh which writes merge outputs under
+         cluster/outputs/ per the double-loop IO convention)
+      2. <root>/results/chain_coords/<sys>/chain_coords.npz  (laptop convention,
+         used by local development)
+
+    First path that exists wins. If neither exists, returns the cluster
+    convention path so the FileNotFoundError points there (callers expect a
+    Path either way).
+    """
+    import os
+    env_root = os.environ.get("CHAIN_COORDS_ROOT")
+    if env_root:
+        return Path(env_root) / sys_name / "chain_coords.npz"
+    cluster = root / "outputs" / "chain_coords" / sys_name / "chain_coords.npz"
+    laptop = root / "results" / "chain_coords" / sys_name / "chain_coords.npz"
+    if cluster.exists():
+        return cluster
+    if laptop.exists():
+        return laptop
+    return cluster   # report cluster path in the FileNotFoundError
+
+
 def load_all() -> dict[str, SystemInputs]:
     root = Path(__file__).resolve().parent.parent
     out = {}
     for sys_name, label in SYSTEMS:
-        npz = root / "results" / "chain_coords" / sys_name / "chain_coords.npz"
+        npz = _chain_coords_npz(root, sys_name)
         out[label] = load_system(npz, label, sys_name)
     return out
 
@@ -171,7 +198,7 @@ def load_all_raw() -> dict[str, tuple[dict, str]]:
     root = Path(__file__).resolve().parent.parent
     out = {}
     for sys_name, label in SYSTEMS:
-        npz = root / "results" / "chain_coords" / sys_name / "chain_coords.npz"
+        npz = _chain_coords_npz(root, sys_name)
         out[label] = (load_raw(npz), sys_name)
     return out
 

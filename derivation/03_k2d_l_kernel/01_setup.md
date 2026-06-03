@@ -83,7 +83,7 @@ of the 2π r_xy dr_xy integration; the P_z integrals are dimensionless
 
 So K2D(l) numerically equals the per-pair lateral acceptance area
 averaged over chain endpoint configurations at membrane gap l. The
-absolute scale connects to the the measured K2D,max via a
+absolute scale connects to the measured K2D,max via a
 prefactor we don't try to compute analytically — the SHAPE of K2D(l)
 is what matters for σ_K2D and hence ξ_RL.
 

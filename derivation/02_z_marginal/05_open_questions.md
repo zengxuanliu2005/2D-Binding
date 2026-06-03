@@ -31,7 +31,7 @@ K2D for very short separations.
 - Either (a) truncate z_lab > 0 and renormalise, or (b) keep the full
   distribution but only evaluate K2D(l) for l > 0 where the binding kernel
   is physically nonzero.
-- (a) is simpler and matches the the off-site S17-S21 "end-volume" framework
+- (a) is simpler and matches the off-site S17-S21 "end-volume" framework
   which implicitly assumes the chain stays in the gap. Plan to use (a).
 
 ## Q2 — Lc convention (inherited from derivation/01)

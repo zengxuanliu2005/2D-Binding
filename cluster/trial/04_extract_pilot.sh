@@ -5,7 +5,7 @@
 #
 #  Purpose (also printed when this runs)
 #  -------------------------------------
-#  The §0 bundle ((removed legacy dir)) hinges on one Python script working
+#  The §0 bundle (the full-data analysis bundle) hinges on one Python script working
 #  end-to-end: extract_chain_coords.py reading traj.xyz + mol.psf +
 #  num_bonds_for_xyz_frames.dat and writing chain_coords.npz with the right
 #  schema (positions_R / positions_L / bound_R / bound_L / partner_R /
@@ -228,16 +228,16 @@ if [[ "$RC" -eq 0 && "$FAILED" -eq 0 ]]; then
      • The wall time printed under Step 3 (so we can project full-bundle cost)
 
    Next steps you can do without me:
-     1. If 02_paths_check showed you have YOUR own s002+:
-            cp -R cluster/bundle_for_off-site collaborator /mnt/nfs/ugstu/liuzx/
-            cd /mnt/nfs/ugstu/liuzx/off-site analysis bundle
-            bash run_full_analysis.sh --pilot
-        That tests the full pipeline on your data, ~5 min.
-     2. Otherwise just package the bundle for off-site full-data run:
-            cd /mnt/nfs/ugstu/liuzx/2D-Binding/cluster
-            tar czf off-site analysis bundle.tgz (removed legacy dir)
-            ls -lh off-site analysis bundle.tgz
-        and send to her via WeChat / email.
+     1. If 02_paths_check showed you have YOUR own s002+ on the cluster:
+            cd /mnt/nfs/ugstu/liuzx/2D-Binding
+            bash cluster/run_analysis.sh --pilot
+        That tests the full pipeline on your data, ~5 min. Diagnosis
+        will tell us if any script needs patching before the off-site
+        full-data run sees the same bundle.
+     2. When pilot is green, ping Claude — he'll write
+        cluster/trial/results/<date>_pilot_fullrun_diagnosis.md +
+        verdict.md, then refresh the cluster/ subtree on cluster-A via
+        cyberduck so the off-site full-data collaborator can rsync it.
 EOF
 else
     cat <<'EOF'
